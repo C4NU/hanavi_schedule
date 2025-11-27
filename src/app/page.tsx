@@ -13,21 +13,33 @@ export default function Home() {
     if (!scheduleRef.current) return;
 
     try {
-      // Add exporting class to hide buttons
-      scheduleRef.current.classList.add('exporting');
+      // Clone the element
+      const clone = scheduleRef.current.cloneNode(true) as HTMLElement;
 
-      // Wait for DOM to update
+      // Apply export styles to the clone
+      clone.classList.add('exporting');
+
+      // Position clone off-screen but visible
+      clone.style.position = 'fixed';
+      clone.style.top = '-10000px';
+      clone.style.left = '-10000px';
+      clone.style.zIndex = '-1000';
+
+      // Append to body
+      document.body.appendChild(clone);
+
+      // Wait for DOM/Styles to settle
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      const canvas = await html2canvas(scheduleRef.current, {
+      const canvas = await html2canvas(clone, {
         backgroundColor: '#fff0f5',
         scale: 2,
         scrollX: 0,
         scrollY: 0,
       });
 
-      // Remove exporting class
-      scheduleRef.current.classList.remove('exporting');
+      // Remove clone
+      document.body.removeChild(clone);
 
       const link = document.createElement('a');
       link.download = `hanabi-schedule-${new Date().toISOString().slice(0, 10)}.png`;
@@ -36,10 +48,6 @@ export default function Home() {
     } catch (error) {
       console.error('Export failed:', error);
       alert('PNG 저장에 실패했습니다.');
-      // Make sure to remove class even if error occurs
-      if (scheduleRef.current) {
-        scheduleRef.current.classList.remove('exporting');
-      }
     }
   };
 
