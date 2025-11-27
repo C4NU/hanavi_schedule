@@ -43,18 +43,26 @@
     flex-wrap: wrap;
 }
 
+.titleGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
 .title {
-    font-size: 2.8rem;
+    font-size: clamp(1.2rem, 4vw, 2.8rem);
     color: #ffb6c1;
     font-weight: bold;
     margin: 0;
+    white-space: nowrap;
 }
 
 .date {
     color: #888;
-    font-size: 2rem;
-    margin-left: 10px;
+    font-size: clamp(1rem, 3vw, 2rem);
+    margin-left: 0;
     font-weight: normal;
+    white-space: nowrap;
 }
 
 .controls {
@@ -71,9 +79,10 @@
     border-radius: 10px;
     cursor: pointer;
     font-weight: bold;
-    font-size: 1rem;
+    font-size: clamp(0.8rem, 2.5vw, 1rem);
     transition: all 0.2s;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
 }
 
 .filterButton:hover,
@@ -177,6 +186,14 @@
     justify-content: center;
     padding: 10px;
     border-radius: 10px;
+    text-decoration: none;
+    /* Remove underline for link */
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.charCell:hover {
+    transform: translateY(-2px);
 }
 
 .avatarPlaceholder {
@@ -337,11 +354,11 @@
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .title {
-        font-size: 2rem;
+        font-size: clamp(1.2rem, 5vw, 2rem);
     }
 
     .date {
-        font-size: 1.4rem;
+        font-size: clamp(1rem, 4vw, 1.4rem);
     }
 
     .titleRow {
@@ -361,4 +378,75 @@
     .checkboxGrid {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
+
+    /* Swipe View Styles */
+    .grid {
+        grid-template-columns: 80px 1fr;
+        /* Character column + 1 Day column */
+        min-width: auto;
+        /* Remove min-width constraint */
+        gap: 5px;
+    }
+
+    .dayHeader,
+    .scheduleCell {
+        display: none;
+        /* Hide all by default */
+    }
+
+    /* Show only current day's header and cells */
+    /* Show only current day's header and cells */
+    .grid[data-current-day="0"] [data-day-index="0"],
+    .grid[data-current-day="1"] [data-day-index="1"],
+    .grid[data-current-day="2"] [data-day-index="2"],
+    .grid[data-current-day="3"] [data-day-index="3"],
+    .grid[data-current-day="4"] [data-day-index="4"],
+    .grid[data-current-day="5"] [data-day-index="5"],
+    .grid[data-current-day="6"] [data-day-index="6"] {
+        display: flex;
+        /* or block depending on element */
+    }
+
+    /* Ensure day header is visible */
+    .grid[data-current-day="0"] .dayHeader[data-day-index="0"],
+    .grid[data-current-day="1"] .dayHeader[data-day-index="1"],
+    .grid[data-current-day="2"] .dayHeader[data-day-index="2"],
+    .grid[data-current-day="3"] .dayHeader[data-day-index="3"],
+    .grid[data-current-day="4"] .dayHeader[data-day-index="4"],
+    .grid[data-current-day="5"] .dayHeader[data-day-index="5"],
+    .grid[data-current-day="6"] .dayHeader[data-day-index="6"] {
+        display: block;
+    }
+
+    /* Adjust char cell for mobile */
+    .charCell {
+        padding: 5px;
+    }
+
+    .avatarPlaceholder {
+        width: 40px;
+        height: 40px;
+        font-size: 0.8rem;
+    }
+
+    .charName {
+        font-size: 0.8rem;
+    }
+}
+
+/* Ensure Export ALWAYS shows full grid regardless of screen size */
+:global(.exporting) .grid {
+    grid-template-columns: 100px repeat(7, minmax(120px, 1fr)) !important;
+    min-width: 900px !important;
+    display: grid !important;
+}
+
+:global(.exporting) .dayHeader,
+:global(.exporting) .scheduleCell {
+    display: flex !important;
+    /* Force show all cells */
+}
+
+:global(.exporting) .dayHeader {
+    display: block !important;
 }

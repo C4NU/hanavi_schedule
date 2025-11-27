@@ -14,6 +14,7 @@ export interface CharacterSchedule {
     name: string;
     colorTheme: 'baresa' | 'nemu' | 'maroka' | 'mirai' | 'ruvi' | 'iriya';
     avatarUrl: string;
+    chzzkUrl?: string;
     schedule: {
         [key: string]: ScheduleItem; // key is day 'MON', 'TUE', etc.
     };
