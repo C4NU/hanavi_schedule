@@ -18,11 +18,21 @@ if (vapidPublicKey && vapidPrivateKey) {
 
 export async function POST(request: Request) {
     try {
+        console.log('Push notification request received');
+
         // 1. Verify Admin Secret (Simple security)
-        const { secret, title, body } = await request.json();
+        const bodyData = await request.json();
+        const { secret, title, body } = bodyData;
         const adminSecret = process.env.ADMIN_SECRET;
 
+        console.log('Admin Secret Check:', {
+            provided: secret ? '***' : 'missing',
+            expected: adminSecret ? '***' : 'missing',
+            match: secret === adminSecret
+        });
+
         if (!adminSecret || secret !== adminSecret) {
+            console.error('Unauthorized: Invalid Admin Secret');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -31,9 +41,15 @@ export async function POST(request: Request) {
             .from('subscriptions')
             .select('*');
 
-        if (error || !subscriptions) {
-            console.error('Supabase error:', error);
+        if (error) {
+            console.error('Supabase error fetching subscriptions:', error);
             return NextResponse.json({ error: 'Failed to fetch subscriptions' }, { status: 500 });
+        }
+
+        console.log(`Found ${subscriptions?.length || 0} subscriptions`);
+
+        if (!subscriptions || subscriptions.length === 0) {
+            return NextResponse.json({ message: 'No subscriptions found' });
         }
 
         // 3. Send Notifications
@@ -44,23 +60,29 @@ export async function POST(request: Request) {
         });
 
         const results = await Promise.allSettled(
-            subscriptions.map(sub =>
-                webpush.sendNotification({
+            subscriptions.map(sub => {
+                // Ensure keys are in the correct format
+                const pushSubscription = {
                     endpoint: sub.endpoint,
                     keys: sub.keys
-                }, payload)
+                };
+
+                return webpush.sendNotification(pushSubscription, payload)
                     .catch(err => {
+                        console.error('WebPush Send Error:', err.statusCode, err.body, sub.endpoint);
                         if (err.statusCode === 410 || err.statusCode === 404) {
                             // Subscription expired or gone, delete from DB
                             return supabaseAdmin.from('subscriptions').delete().eq('id', sub.id);
                         }
                         throw err;
-                    })
-            )
+                    });
+            })
         );
 
         const successCount = results.filter(r => r.status === 'fulfilled').length;
         const failureCount = results.length - successCount;
+
+        console.log(`Push Result: Success=${successCount}, Failed=${failureCount}`);
 
         return NextResponse.json({
             success: true,
