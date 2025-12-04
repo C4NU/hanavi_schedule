@@ -67,7 +67,20 @@
 
 .controls {
     display: flex;
+    flex-direction: column;
+    gap: 8px;
+    /* align-items: flex-end; Removed to allow stretch (default) */
+}
+
+.controlRow {
+    display: flex;
     gap: 10px;
+    width: 100%;
+    /* Ensure it fills the container */
+}
+
+.fullWidth {
+    width: 100%;
 }
 
 .filterButton,
@@ -83,6 +96,11 @@
     transition: all 0.2s;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     white-space: nowrap;
+    flex: 1;
+    /* Added to make them fill the flex container */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .filterButton:hover,

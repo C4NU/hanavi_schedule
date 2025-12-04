@@ -96,14 +96,16 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport }, ref)
                             <span className={styles.date}>{data.weekRange}</span>
                         </div>
                         <div className={styles.controls}>
-                            <button className={styles.filterButton} onClick={() => setFilterOpen(!filterOpen)}>
+                            <div className={styles.controlRow}>
+                                <button className={styles.exportButton} onClick={handleDownloadCalendar}>
+                                    📅 캘린더 추가
+                                </button>
+                                <button className={styles.exportButton} onClick={onExport}>
+                                    📥 이미지로 저장
+                                </button>
+                            </div>
+                            <button className={`${styles.filterButton} ${styles.fullWidth}`} onClick={() => setFilterOpen(!filterOpen)}>
                                 {filterOpen ? '▼' : '▶'} 필터
-                            </button>
-                            <button className={styles.exportButton} onClick={handleDownloadCalendar}>
-                                📅 캘린더 추가
-                            </button>
-                            <button className={styles.exportButton} onClick={onExport}>
-                                📥 이미지로 저장
                             </button>
                         </div>
                     </div>
