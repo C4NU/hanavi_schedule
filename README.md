@@ -21,53 +21,22 @@
 
 1.  **저장소 클론**
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/C4NU/hanavi_schedule.git
     cd hanavi_schedule
     ```
 
-2.  **Node.js 버전 확인 및 설정** (nvm 사용 시)
-    ```bash
-    nvm install 20
-    nvm use 20
-    ```
-
-3.  **의존성 설치**
+2.  **의존성 설치**
     ```bash
     npm install
     ```
 
-4.  **환경 변수 설정**
-    `.env.local` 파일을 생성하고 다음 변수들을 설정합니다:
-    ```env
-    # Google Sheets
-    GOOGLE_SHEET_ID=your_sheet_id
-    GOOGLE_SERVICE_ACCOUNT_EMAIL=your_email
-    GOOGLE_PRIVATE_KEY="your_private_key"
+3.  **환경 변수 설정**
+    `.env.local` 파일을 생성하고 필요한 변수를 설정합니다. (셋업 가이드 참고)
 
-    # Web Push (VAPID Keys)
-    NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_public_key
-    VAPID_PRIVATE_KEY=your_private_key
-    VAPID_SUBJECT=mailto:your_email@example.com
-
-    # Admin
-    ADMIN_SECRET=your_admin_secret_key
-
-    # Cron (Supabase/External Scheduler)
-    CRON_SECRET=your_cron_bearer_token
-    ```
-
-5.  **개발 서버 실행**
+4.  **개발 서버 실행**
     ```bash
     npm run dev
     ```
-    브라우저에서 [http://localhost:3000](http://localhost:3000)을 엽니다.
-
-### 프로덕션 빌드
-
-```bash
-npm run build
-npm start
-```
 
 ## 📱 PWA 설치 (모바일)
 
