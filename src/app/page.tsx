@@ -52,7 +52,7 @@ export default function Home() {
   };
 
   return (
-    <main>
+    <main className="main-layout">
       <ScheduleGrid ref={scheduleRef} data={schedule} onExport={handleExport} />
     </main>
   );

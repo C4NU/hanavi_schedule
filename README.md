@@ -8,7 +8,8 @@
 - **방송인 필터**: 원하는 방송인만 선택하여 볼 수 있습니다
 - **PNG 저장**: 시간표를 이미지로 다운로드할 수 있습니다
 - **오프라인 지원**: 서비스 워커를 통한 기본 오프라인 기능
-- **실시간 업데이트**: (예정) Google Docs 연동 시 자동 업데이트
+- **푸시 알림**: 스케줄 업데이트 시 브라우저 알림 수신 (Web Push)
+- **실시간 업데이트**: Google Sheets 연동을 통한 데이터 자동 업데이트
 
 ## 🚀 시작하기
 
@@ -35,7 +36,21 @@
     npm install
     ```
 
-4.  **개발 서버 실행**
+4.  **환경 변수 설정**
+    `.env.local` 파일을 생성하고 다음 변수들을 설정합니다:
+    ```env
+    # Google Sheets
+    GOOGLE_SHEET_ID=your_sheet_id
+    GOOGLE_SERVICE_ACCOUNT_EMAIL=your_email
+    GOOGLE_PRIVATE_KEY="your_private_key"
+
+    # Web Push (VAPID Keys)
+    NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_public_key
+    VAPID_PRIVATE_KEY=your_private_key
+    VAPID_SUBJECT=mailto:your_email@example.com
+    ```
+
+5.  **개발 서버 실행**
     ```bash
     npm run dev
     ```
@@ -76,28 +91,36 @@ npm start
 - "PNG 저장" 버튼 클릭
 - 현재 화면의 시간표가 이미지로 다운로드됩니다
 
+### 알림 설정
+- 최초 접속 시 또는 "알림 설정" 버튼을 통해 알림 권한 요청
+- "허용" 시 스케줄 업데이트 알림 수신 가능
+
 ## 🔧 기술 스택
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
-- **Styling**: CSS Modules
+- **Styling**: Tailwind CSS v4
 - **PWA**: next-pwa
 - **Data Fetching**: SWR
 - **Export**: html2canvas
+- **Notifications**: Web Push API
 
 ## 📝 데이터 편집
 
-현재는 `src/data/rawSchedule.ts` 파일의 데이터를 사용합니다.
-
-Google Docs 연동을 위해서는:
-1. `.env.local` 파일 생성
-2. `GOOGLE_DOC_URL=<your-google-doc-url>` 추가
-3. 서버 재시작
+Google Sheets를 통해 데이터를 관리합니다.
+1. Google Cloud Console에서 서비스 계정 생성 및 키 발급
+2. Google Sheet에 서비스 계정 이메일 공유 (뷰어 권한)
+3. 환경 변수 설정 (위의 설치 방법 참고)
 
 ## 🚀 Vercel 배포
 
 1. Vercel에 프로젝트 연결
-2. 환경 변수 설정 (필요시):
-   - `GOOGLE_DOC_URL`: Google Docs URL
+2. 환경 변수 설정:
+   - `GOOGLE_SHEET_ID`
+   - `GOOGLE_SERVICE_ACCOUNT_EMAIL`
+   - `GOOGLE_PRIVATE_KEY`
+   - `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+   - `VAPID_PRIVATE_KEY`
+   - `VAPID_SUBJECT`
 3. 자동 빌드 및 배포
 
 ## 📄 라이선스

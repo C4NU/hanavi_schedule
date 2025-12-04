@@ -141,6 +141,7 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport }, ref)
                     <div
                         className={styles.grid}
                         data-current-day={currentDayIndex}
+                        style={{ '--char-count': filteredData.characters.length } as React.CSSProperties}
                     >
                         {/* Header Row */}
                         <div className={styles.cornerCell}></div>

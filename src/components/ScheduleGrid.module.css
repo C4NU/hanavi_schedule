@@ -4,8 +4,34 @@
     margin: 0 auto;
     background: white;
     border-radius: 20px;
-    padding: 20px;
+    padding: 15px;
+    /* Reduced from 20px */
     box-shadow: 0 4px 20px rgba(255, 182, 193, 0.3);
+}
+
+/* ... (lines 11-32 unchanged) ... */
+
+.header {
+    margin-bottom: 15px;
+    /* Reduced from 20px */
+}
+
+/* ... (lines 37-237 unchanged) ... */
+
+.scheduleCell {
+    padding: 8px;
+    /* Reduced from 10px */
+    border-radius: 10px;
+    min-height: 70px;
+    /* Reduced from 80px */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    border: 2px solid transparent;
+    /* Default transparent, colored by theme class */
+    transition: transform 0.2s;
+    background-color: white;
+    /* Ensure white background */
 }
 
 /* Export Wrapper */
@@ -516,4 +542,191 @@
 .noBreak {
     white-space: nowrap;
     display: inline-block;
+}
+
+/* Tablet/Laptop (1024px+) */
+@media (min-width: 1024px) {
+    .exportWrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .container {
+        /* Create side margins by limiting width */
+        max-width: 95%;
+        width: 100%;
+        margin: 0 auto;
+
+        /* Fill height logic */
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+
+        /* Use vh for padding to scale with screen height */
+        padding: 1.5vh 2vw;
+    }
+
+    .header {
+        flex-shrink: 0;
+        /* Use vh for margin */
+        margin-bottom: 1vh;
+    }
+
+    .gridWrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 0;
+        overflow: hidden;
+    }
+
+    .grid {
+        flex: 1;
+        /* Use dynamic rows: 1 header row (auto) + N char rows (1fr) */
+        grid-template-rows: auto repeat(var(--char-count, 6), 1fr);
+        align-content: stretch;
+        height: 100%;
+        /* Use vh for gap */
+        gap: 0.8vh;
+    }
+
+    .scheduleCell {
+        min-height: 0;
+        height: 100%;
+        overflow: hidden;
+        /* Use vh for padding */
+        padding: 0.8vh 0.5vw;
+    }
+
+    .content {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .charCell {
+        height: 100%;
+        padding: 0.5vh;
+    }
+
+    .dayHeader {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5vh;
+    }
+
+    /* Responsive Font Sizes using vh/vw clamp */
+    .title {
+        font-size: clamp(1.5rem, 3vh, 2.5rem);
+    }
+
+    .date {
+        font-size: clamp(1.2rem, 2.5vh, 2rem);
+    }
+
+    .time {
+        font-size: clamp(0.8rem, 1.8vh, 1.1rem);
+        margin-bottom: 0.5vh;
+    }
+
+    .content {
+        font-size: clamp(0.75rem, 1.6vh, 1rem);
+    }
+
+    .charName {
+        font-size: clamp(0.8rem, 1.8vh, 1.1rem);
+    }
+
+    .avatarImage,
+    .avatarPlaceholder {
+        width: clamp(30px, 5vh, 50px);
+        height: clamp(30px, 5vh, 50px);
+    }
+}
+
+/* Large Screens (1600px+) */
+@media (min-width: 1600px) {
+    .container {
+        max-width: 90%;
+        /* More side margins */
+        padding: 20px;
+        /* Restore padding */
+    }
+
+    .header {
+        margin-bottom: 20px;
+        /* Restore margin */
+    }
+
+    .title {
+        font-size: 3rem;
+    }
+
+    .date {
+        font-size: 2.2rem;
+    }
+
+    .time {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+
+    .content {
+        font-size: 1rem;
+        -webkit-line-clamp: 4;
+        /* Allow more lines on larger screens */
+        line-clamp: 4;
+    }
+
+    .charName {
+        font-size: 1.1rem;
+    }
+
+    .scheduleCell {
+        padding: 10px;
+    }
+}
+
+/* Extra Large Screens (2200px+ for QHD/4K) */
+@media (min-width: 2200px) {
+    .container {
+        max-width: 85%;
+        /* Even more side margins */
+    }
+
+    .title {
+        font-size: 4rem;
+    }
+
+    .date {
+        font-size: 2.8rem;
+    }
+
+    .time {
+        font-size: 1.4rem;
+    }
+
+    .content {
+        font-size: 1.2rem;
+        -webkit-line-clamp: 5;
+        line-clamp: 5;
+    }
+
+    .charName {
+        font-size: 1.3rem;
+    }
+
+    .scheduleCell {
+        padding: 15px;
+    }
 }

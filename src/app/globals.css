@@ -74,8 +74,11 @@
 
 * {
   box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
@@ -107,6 +110,22 @@ a {
 :global(.exporting)>* {
   margin: 0 !important;
   max-width: none !important;
+}
+
+/* Main Layout */
+.main-layout {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  /* Default: scrollable on mobile */
+}
+
+@media (min-width: 1024px) {
+  .main-layout {
+    overflow: hidden;
+    /* Tablet/Desktop: no scroll */
+  }
 }
 
 /* Animations */

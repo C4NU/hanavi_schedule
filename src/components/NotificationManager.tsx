@@ -174,33 +174,72 @@ export default function NotificationManager() {
         }
     }, [schedule]);
 
+    const modal = useRef<HTMLDivElement>(null);
+
+    // close on click outside
+    useEffect(() => {
+        const clickHandler = ({ target }: MouseEvent) => {
+            if (!modal.current) return;
+            if (
+                !showPermissionModal ||
+                modal.current.contains(target as Node)
+            )
+                return;
+            setShowPermissionModal(false);
+        };
+        document.addEventListener("click", clickHandler);
+        return () => document.removeEventListener("click", clickHandler);
+    });
+
+    // close if the esc key is pressed
+    useEffect(() => {
+        const keyHandler = ({ keyCode }: KeyboardEvent) => {
+            if (!showPermissionModal || keyCode !== 27) return;
+            setShowPermissionModal(false);
+        };
+        document.addEventListener("keydown", keyHandler);
+        return () => document.removeEventListener("keydown", keyHandler);
+    });
+
     if (!showPermissionModal) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/30 z-[9999] flex items-center justify-center animate-fade-in font-[-apple-system,BlinkMacSystemFont,sans-serif] p-4">
-            <div className="bg-white rounded-[14px] shadow-2xl p-8 min-w-[300px] max-w-[360px] text-center animate-scale-in">
-                {/* 제목 + 본문 */}
-                <div className="space-y-2 mb-7">
-                    <h3 className="text-[17px] font-bold text-[#333333]">
-                        알림 설정
-                    </h3>
-                    <p className="text-[14px] text-[#333333]/80 leading-relaxed">
-                        스케줄이 변경되면<br />
-                        가장 먼저 알려드릴까요?
-                    </p>
+        <div
+            className={`fixed left-0 top-0 flex h-full min-h-screen w-full items-center justify-center bg-black/40 px-4 py-5 z-[9999] ${showPermissionModal ? "block" : "hidden"
+                }`}
+        >
+            <div
+                ref={modal}
+                className="w-full max-w-[520px] rounded-[24px] bg-white p-10 shadow-2xl animate-scale-in"
+            >
+                {/* 아이콘 */}
+                <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#ffb6c1]/10">
+                    <svg className="h-7 w-7 text-[#ffb6c1]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
                 </div>
 
+                {/* 제목 */}
+                <h3 className="mb-3 text-2xl font-bold text-[#1a1a1a]">
+                    알림 설정
+                </h3>
+
+                {/* 본문 */}
+                <p className="mb-10 text-base leading-relaxed text-[#6b7280]">
+                    스케줄이 변경되면 가장 먼저 알려드릴까요?
+                </p>
+
                 {/* 버튼 영역 */}
-                <div className="flex gap-3">
+                <div className="flex gap-4">
                     <button
                         onClick={() => setShowPermissionModal(false)}
-                        className="flex-1 py-3 text-[14px] font-bold text-[#333333] bg-[#fff0f5] rounded-[10px] active:bg-[#ffe4e1] transition-colors border border-[#ffb6c1]/30"
+                        className="flex-1 rounded-lg border-2 border-gray-200 bg-white px-6 py-4 text-base font-semibold text-[#1a1a1a] transition hover:bg-gray-50"
                     >
                         허용 안 함
                     </button>
                     <button
                         onClick={handlePermissionRequest}
-                        className="flex-1 py-3 text-[14px] font-bold text-white bg-[#ffb6c1] rounded-[10px] active:bg-[#ff9aa2] transition-colors shadow-sm"
+                        className="flex-1 rounded-lg bg-[#ffb6c1] px-6 py-4 text-base font-semibold text-white transition hover:bg-[#ff9aa2] shadow-sm"
                     >
                         허용
                     </button>
