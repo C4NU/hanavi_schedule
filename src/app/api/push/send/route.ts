@@ -54,7 +54,7 @@ export async function POST(request: Request) {
 
         // 3. Send Notifications
         const payload = JSON.stringify({
-            title: title || '하나비 스케줄 업데이트',
+            title: title ? `[배경 알림] ${title}` : '[배경 알림] 하나비 스케줄 업데이트',
             body: body || '스케줄이 업데이트되었습니다. 확인해보세요!',
             icon: '/icon-192x192.png'
         });

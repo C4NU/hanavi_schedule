@@ -114,7 +114,7 @@ export default function NotificationManager() {
             // Schedule has changed
             const oldSchedule = JSON.parse(lastScheduleRef.current);
             const newSchedule = schedule;
-            let notificationTitle = '하나비 스케줄 업데이트';
+            let notificationTitle = '[앱 실행] 하나비 스케줄 업데이트';
             let notificationBody = '스케줄이 업데이트되었습니다. 확인해보세요!';
 
             // 1. Check if Week Range Changed
