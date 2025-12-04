@@ -88,9 +88,10 @@
 .contact {
     margin-top: 2rem;
     text-align: center;
-    background-color: #F8F9FA;
-    padding: 1rem;
-    border-radius: 8px;
+    background-color: #f0f2f5;
+    /* Slightly darker/distinct gray */
+    padding: 1.5rem;
+    border-radius: 12px;
 }
 
 .contact a {

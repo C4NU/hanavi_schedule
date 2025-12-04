@@ -119,24 +119,24 @@
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: #FF6B6B;
-    color: white;
-    border: none;
+    background: white;
+    color: #333;
+    border: 2px solid #FF6B6B;
     font-weight: bold;
     font-size: 1.2rem;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     transition: all 0.2s;
     flex-shrink: 0;
 }
 
 .infoButton:hover {
-    transform: scale(1.05);
-    background: #FF5252;
-    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+    transform: translateY(-2px);
+    background: #fff0f5;
+    box-shadow: 0 4px 12px rgba(255, 182, 193, 0.4);
 }
 
 .filterButton,

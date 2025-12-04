@@ -22,16 +22,21 @@ const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
                         <ul>
                             <li><strong>필터</strong>: 원하는 멤버의 방송만 골라볼 수 있습니다.</li>
                             <li><strong>이미지로 저장</strong>: 현재 보이는 스케줄을 이미지 파일로 저장합니다.</li>
-                            <li><strong>알림 설정</strong>: 방송 시작 알림을 켜거나 끌 수 있습니다.</li>
+                            <li><strong>캘린더 추가</strong>: ics 파일을 다운로드하여 내 캘린더에 일정을 등록할 수 있습니다.</li>
                         </ul>
+                    </section>
+
+                    <section>
+                        <h3>멤버 프로필 💖</h3>
+                        <p>
+                            스케줄표의 멤버 프로필 사진이나 이름을 누르면, 해당 멤버의 <strong>치지직 채널</strong>로 바로 이동합니다!
+                        </p>
                     </section>
 
                     <section>
                         <h3>알림 안내 🔔</h3>
                         <p>
                             웹 앱의 특성상, 앱을 실행했을 때 최신 스케줄 정보를 불러오며 알림이 도착할 수 있습니다.
-                            <br />
-                            (앱이 꺼져 있을 때도 중요 알림은 발송됩니다.)
                         </p>
                     </section>
 
