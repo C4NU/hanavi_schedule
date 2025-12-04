@@ -164,7 +164,16 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport }, ref)
                                     rel="noopener noreferrer"
                                     className={`${styles.charCell} ${styles[char.colorTheme]}`}
                                 >
-                                    <div className={styles.avatarPlaceholder}>{char.name[0]}</div>
+                                    {char.avatarUrl ? (
+                                        <img
+                                            src={char.avatarUrl}
+                                            alt={char.name}
+                                            className={styles.avatarImage}
+                                            referrerPolicy="no-referrer"
+                                        />
+                                    ) : (
+                                        <div className={styles.avatarPlaceholder}>{char.name[0]}</div>
+                                    )}
                                     <span className={styles.charName}>{char.name}</span>
                                 </a>
 
@@ -172,7 +181,15 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport }, ref)
                                 {DAYS.map((day, index) => {
                                     const item = char.schedule[day];
                                     const isOff = item?.type === 'off' || !item;
-                                    const isMaybeCollab = item?.content?.includes('메이비 합방');
+                                    // Determine special class based on type
+                                    let specialClass = '';
+                                    if (item?.type === 'collab_maivi') specialClass = styles.collab_maivi;
+                                    else if (item?.type === 'collab_hanavi') specialClass = styles.collab_hanavi;
+                                    else if (item?.type === 'collab_universe') specialClass = styles.collab_universe;
+                                    else if (item?.type === 'collab') specialClass = styles.collab;
+                                    // Backward compatibility for content string
+                                    else if (item?.content?.includes('메이비 합방')) specialClass = styles.collab_maivi;
+
                                     const isPreparing = item?.content?.includes('스케쥴 준비중');
 
                                     return (
@@ -183,7 +200,7 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport }, ref)
                                                 ${styles.scheduleCell}
                                                 ${styles[char.colorTheme]}
                                                 ${isOff ? styles.off : ''}
-                                                ${isMaybeCollab ? styles.maybeCollab : ''}
+                                                ${specialClass}
                                             `}
                                         >
                                             {item && !isOff && (

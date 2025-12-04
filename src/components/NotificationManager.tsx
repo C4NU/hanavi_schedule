@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSchedule } from '@/hooks/useSchedule';
+import { CharacterSchedule } from '@/types/schedule';
 
 function urlBase64ToUint8Array(base64String: string) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -23,39 +24,6 @@ export default function NotificationManager() {
     const lastScheduleRef = useRef<string>('');
     const isFirstMount = useRef(true);
     const [showPermissionModal, setShowPermissionModal] = useState(false);
-
-    useEffect(() => {
-        // Check if notifications are supported
-        if (!('Notification' in window)) {
-            console.log('This browser does not support desktop notification');
-            return;
-        }
-
-        // Check if permission is default (not asked yet)
-        if (Notification.permission === 'default') {
-            setShowPermissionModal(true);
-        } else if (Notification.permission === 'granted') {
-            // Ensure service worker is registered and subscribed
-            registerServiceWorker();
-        }
-    }, []);
-
-    const registerServiceWorker = async () => {
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-            try {
-                const registration = await navigator.serviceWorker.register('/sw.js');
-                console.log('Service Worker registered');
-
-                // Check if already subscribed
-                const subscription = await registration.pushManager.getSubscription();
-                if (!subscription) {
-                    await subscribeUser(registration);
-                }
-            } catch (error) {
-                console.error('Service Worker registration failed:', error);
-            }
-        }
-    };
 
     const subscribeUser = async (registration: ServiceWorkerRegistration) => {
         const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -85,6 +53,39 @@ export default function NotificationManager() {
             console.error('Failed to subscribe the user: ', error);
         }
     };
+
+    const registerServiceWorker = useCallback(async () => {
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            try {
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                console.log('Service Worker registered');
+
+                // Check if already subscribed
+                const subscription = await registration.pushManager.getSubscription();
+                if (!subscription) {
+                    await subscribeUser(registration);
+                }
+            } catch (error) {
+                console.error('Service Worker registration failed:', error);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        // Check if notifications are supported
+        if (!('Notification' in window)) {
+            console.log('This browser does not support desktop notification');
+            return;
+        }
+
+        // Check if permission is default (not asked yet)
+        if (Notification.permission === 'default') {
+            setShowPermissionModal(true);
+        } else if (Notification.permission === 'granted') {
+            // Ensure service worker is registered and subscribed
+            registerServiceWorker();
+        }
+    }, [registerServiceWorker]);
 
     const handlePermissionRequest = async () => {
         const permission = await Notification.requestPermission();
@@ -124,12 +125,12 @@ export default function NotificationManager() {
                 // 2. Check for Specific Character Changes
                 const changedCharacters: string[] = [];
 
-                newSchedule.characters.forEach((newChar: any) => {
-                    const oldChar = oldSchedule.characters.find((c: any) => c.id === newChar.id);
+                newSchedule.characters.forEach((newChar: CharacterSchedule) => {
+                    const oldChar = oldSchedule.characters.find((c: CharacterSchedule) => c.id === newChar.id);
                     if (!oldChar) return;
 
                     // Compare schedule items
-                    const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+                    const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'] as const;
                     const hasChanged = days.some(day => {
                         const oldItem = oldChar.schedule[day];
                         const newItem = newChar.schedule[day];
@@ -166,22 +167,8 @@ export default function NotificationManager() {
                 });
             }
 
-            // 2. In-app Alert (Toast)
-            const toast = document.createElement('div');
-            toast.className = 'fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce cursor-pointer';
-            toast.innerHTML = `<strong>${notificationTitle}</strong><br/>${notificationBody}`;
-            toast.onclick = () => {
-                toast.remove();
-                window.location.reload();
-            };
-            document.body.appendChild(toast);
-
-            // Auto remove after 5 seconds
-            setTimeout(() => {
-                if (document.body.contains(toast)) {
-                    document.body.removeChild(toast);
-                }
-            }, 5000);
+            // 2. In-app Alert (Toast) - REMOVED as per user request
+            // The user only wants browser notifications, not the in-app toast.
 
             lastScheduleRef.current = currentScheduleStr;
         }
@@ -190,25 +177,26 @@ export default function NotificationManager() {
     if (!showPermissionModal) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center">
-                <div className="text-4xl mb-4">🔔</div>
-                <h3 className="text-xl font-bold mb-2 text-gray-800">알림 설정</h3>
-                <p className="text-gray-600 mb-6">
-                    스케줄이 업데이트되면 푸시 알림을 보내드릴까요?
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300">
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center transform transition-all duration-300 scale-100 border border-white/20">
+                <div className="text-5xl mb-6 animate-bounce">🔔</div>
+                <h3 className="text-2xl font-bold mb-3 text-gray-800">알림 설정</h3>
+                <p className="text-gray-600 mb-8 text-lg leading-relaxed">
+                    스케줄이 업데이트되면<br />
+                    가장 먼저 알려드릴까요?
                 </p>
-                <div className="flex gap-3 justify-center">
-                    <button
-                        onClick={() => setShowPermissionModal(false)}
-                        className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition-colors"
-                    >
-                        나중에
-                    </button>
+                <div className="flex flex-col gap-3">
                     <button
                         onClick={handlePermissionRequest}
-                        className="px-4 py-2 rounded-lg bg-blue-500 text-white font-bold hover:bg-blue-600 transition-colors shadow-md"
+                        className="w-full py-3.5 rounded-xl bg-blue-500 text-white font-bold text-lg hover:bg-blue-600 transition-all shadow-lg hover:shadow-blue-500/30 active:scale-95"
                     >
-                        네, 받을래요!
+                        네, 알려주세요!
+                    </button>
+                    <button
+                        onClick={() => setShowPermissionModal(false)}
+                        className="w-full py-3.5 rounded-xl bg-gray-100 text-gray-500 font-medium hover:bg-gray-200 transition-colors"
+                    >
+                        괜찮아요
                     </button>
                 </div>
             </div>

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import webpush from 'web-push';
-import { getScheduleFromSheet } from '@/utils/googleSheets';
+// import { getScheduleFromSheet } from '@/utils/googleSheets';
 
 // Configure web-push
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;

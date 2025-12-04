@@ -49,9 +49,21 @@
   --color-iriya-off-text: #DFDFDF;
 
   /* Special Events */
-  --color-maybe-bg: #FDF5FA;
-  --color-maybe-border: #E473AB;
-  --color-maybe-time: #F27AB3;
+  /* Special Events */
+  /* Maivi Collab (Pink) */
+  --color-maivi-bg: #FDF5FA;
+  --color-maivi-border: #E473AB;
+  --color-maivi-time: #F27AB3;
+
+  /* Universe Collab (Pink - #FFF0F5) */
+  --color-universe-bg: #FFF0F5;
+  --color-universe-border: #E473AB;
+  --color-universe-time: #F27AB3;
+
+  /* Hanavi Collab (Ruvi's Colors) */
+  --color-hanavi-bg: #FDF2F4;
+  --color-hanavi-border: #DF3F58;
+  --color-hanavi-time: #E05B6B;
 
   /* Layout */
   --header-height: 60px;

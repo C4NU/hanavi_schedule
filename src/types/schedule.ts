@@ -1,7 +1,7 @@
 export interface ScheduleItem {
     time: string;
     content: string;
-    type?: 'stream' | 'video' | 'collab' | 'off';
+    type?: 'stream' | 'collab' | 'collab_maivi' | 'collab_hanavi' | 'collab_universe' | 'off';
 }
 
 export interface DaySchedule {

@@ -56,157 +56,154 @@ export async function getScheduleFromSheet(): Promise<WeeklySchedule | null> {
     const sheets = google.sheets({ version: 'v4', auth: auth as any });
 
     try {
-        // 1. Get the spreadsheet metadata to find the sheet name
+        // 1. Get the spreadsheet metadata to find sheet names
         const metadata = await sheets.spreadsheets.get({
             spreadsheetId: SHEET_ID,
         });
 
-        const sheetTitle = metadata.data.sheets?.[0]?.properties?.title;
-        if (!sheetTitle) {
+        const sheetList = metadata.data.sheets;
+        if (!sheetList || sheetList.length === 0) {
             console.error('No sheets found in the spreadsheet');
             return null;
         }
 
-        // 2. Fetch data using the dynamic sheet title
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SHEET_ID,
-            range: `${sheetTitle}!A:Z`, // Read the entire first sheet
-        });
+        // Find specific sheets by name
+        const profileSheet = sheetList.find(s => s.properties?.title === '프로필 정보');
+        // Assume the other one is schedule, or look for '방송 스케줄'
+        const scheduleSheet = sheetList.find(s => s.properties?.title?.includes('방송 스케줄')) || sheetList[0];
 
-        const rows = response.data.values;
-        if (!rows || rows.length === 0) {
-            console.warn('No data found in the spreadsheet');
-            return null;
+        // 2. Fetch Profile Data (using spreadsheets.get to retrieve hyperlinks)
+        let characters: CharacterSchedule[] = [];
+        if (profileSheet && profileSheet.properties?.title) {
+            // We need includeGridData: true to get hyperlinks
+            const profileResponse = await sheets.spreadsheets.get({
+                spreadsheetId: SHEET_ID,
+                ranges: [`${profileSheet.properties.title}!A:E`], // ID, Name, Theme, Avatar URL, Chzzk URL
+                includeGridData: true,
+            });
+
+            const sheetData = profileResponse.data.sheets?.[0]?.data?.[0]?.rowData;
+            characters = parseProfileSheetWithHyperlinks(sheetData);
+        } else {
+            console.warn("'프로필 정보' sheet not found, using default/empty characters");
         }
 
-        return parseSheetData(rows);
+        // 3. Fetch Schedule Data
+        let weekRange = '';
+        if (scheduleSheet && scheduleSheet.properties?.title) {
+            const scheduleResponse = await sheets.spreadsheets.values.get({
+                spreadsheetId: SHEET_ID,
+                range: `${scheduleSheet.properties.title}!A:E`, // weekRange at top, then data columns
+            });
+            const scheduleData = parseScheduleSheet(scheduleResponse.data.values, characters);
+            weekRange = scheduleData.weekRange;
+            // Characters are updated in-place within parseScheduleSheet
+        }
+
+        return {
+            weekRange: weekRange || '날짜 미정',
+            characters
+        };
+
     } catch (error) {
         console.error('Error fetching data from Google Sheets:', error);
         return null;
     }
 }
 
-function parseSheetData(rows: string[][]): WeeklySchedule {
-    let weekRange = '';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseProfileSheetWithHyperlinks(rowData: any[] | undefined): CharacterSchedule[] {
+    if (!rowData || rowData.length < 2) return []; // No data or just header
+
     const characters: CharacterSchedule[] = [];
-    const scheduleMap: Record<string, string[]> = {}; // Temporary storage for schedule data
+    // Assume Header: ID, Name, Theme, Avatar URL, Chzzk URL
+    // Skip header row (index 0)
+    for (let i = 1; i < rowData.length; i++) {
+        const row = rowData[i];
+        const values = row.values;
+        if (!values || !values[0]) continue; // Skip empty row or ID
 
-    let currentSection = '';
-    let headerMap: Record<string, number> = {};
+        // Helper to get text or hyperlink
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const getCellData = (cell: any) => {
+            if (!cell) return '';
+            // Priority: Hyperlink -> Formatted Value -> User Entered Value
+            return cell.hyperlink || cell.formattedValue || cell.userEnteredValue?.stringValue || '';
+        };
 
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        if (row.length === 0) continue;
+        const id = getCellData(values[0]).trim();
+        if (!id) continue;
 
-        const firstCell = row[0].trim();
-
-        // Detect Section Headers
-        if (firstCell.startsWith('#')) {
-            if (firstCell.includes('METADATA')) currentSection = 'METADATA';
-            else if (firstCell.includes('CHARACTERS')) currentSection = 'CHARACTERS';
-            else if (firstCell.includes('SCHEDULES')) currentSection = 'SCHEDULES';
-
-            // Reset header map for new section (next row is usually header)
-            headerMap = {};
-            // Skip the section header row
-            continue;
-        }
-
-        // Parse Header Row (if it looks like a header)
-        if (currentSection === 'METADATA' && row[0] === 'Key') {
-            // Metadata header, skip
-            continue;
-        }
-        if (currentSection === 'CHARACTERS' && row[0] === 'ID') {
-            row.forEach((col, index) => { headerMap[col.trim()] = index; });
-            continue;
-        }
-        if (currentSection === 'SCHEDULES' && row[0] === 'ID') {
-            row.forEach((col, index) => { headerMap[col.trim()] = index; });
-            continue;
-        }
-
-        // Parse Data Rows based on section
-        if (currentSection === 'METADATA') {
-            if (row[0] === 'weekRange') {
-                weekRange = row[1];
+        characters.push({
+            id: id,
+            name: getCellData(values[1]).trim(),
+            colorTheme: (getCellData(values[2]).trim() || 'varessa') as CharacterSchedule['colorTheme'],
+            avatarUrl: getCellData(values[3]).trim(),
+            chzzkUrl: getCellData(values[4]).trim(),
+            schedule: {
+                MON: { time: '', content: '휴방', type: 'off' },
+                TUE: { time: '', content: '휴방', type: 'off' },
+                WED: { time: '', content: '휴방', type: 'off' },
+                THU: { time: '', content: '휴방', type: 'off' },
+                FRI: { time: '', content: '휴방', type: 'off' },
+                SAT: { time: '', content: '휴방', type: 'off' },
+                SUN: { time: '', content: '휴방', type: 'off' },
             }
-        } else if (currentSection === 'CHARACTERS') {
-            // Ensure we have a valid ID
-            const idIndex = headerMap['ID'];
-            if (idIndex === undefined || !row[idIndex]) continue;
-
-            const id = row[idIndex];
-            const name = row[headerMap['Name']] || '';
-            const theme = (row[headerMap['Theme']] || 'varessa') as CharacterSchedule['colorTheme'];
-            const avatarUrl = row[headerMap['Avatar URL']] || '';
-            const chzzkUrl = row[headerMap['Chzzk URL']] || '';
-
-            characters.push({
-                id,
-                name,
-                colorTheme: theme,
-                avatarUrl,
-                chzzkUrl,
-                schedule: {} // Will be filled later
-            });
-        } else if (currentSection === 'SCHEDULES') {
-            const idIndex = headerMap['ID'];
-            if (idIndex === undefined || !row[idIndex]) continue;
-
-            const id = row[idIndex];
-            scheduleMap[id] = row;
-        }
+        });
     }
-
-    // Merge Schedule Data into Characters
-    const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-
-    characters.forEach(char => {
-        const scheduleRow = scheduleMap[char.id];
-        if (scheduleRow) {
-            DAYS.forEach(day => {
-                const colIndex = headerMap[day];
-                if (colIndex !== undefined && scheduleRow[colIndex]) {
-                    char.schedule[day] = parseScheduleCell(scheduleRow[colIndex]);
-                } else {
-                    // Default to OFF if missing
-                    char.schedule[day] = { time: '', content: '휴방', type: 'off' };
-                }
-            });
-        }
-    });
-
-    return {
-        weekRange: weekRange || '날짜 미정',
-        characters
-    };
+    return characters;
 }
 
-function parseScheduleCell(cellValue: string): ScheduleItem {
-    if (!cellValue || cellValue === 'OFF') {
-        return { time: '', content: '휴방', type: 'off' };
+function parseScheduleSheet(rows: string[][] | undefined | null, characters: CharacterSchedule[]): { weekRange: string } {
+    if (!rows || rows.length === 0) return { weekRange: '' };
+
+    let weekRange = '';
+
+    // 1. Parse Metadata (Row 1)
+    if (rows[0] && rows[0][0] === 'weekRange') {
+        weekRange = rows[0][1] || '';
     }
 
-    const parts = cellValue.split('|').map(s => s.trim());
-    const time = parts[0] || '';
-    const content = parts[1] || '';
-    let type: 'stream' | 'video' | 'collab' | 'off' = 'stream';
+    // 2. Parse Schedule Data (Start from Row 4, index 3)
+    // Header is at Row 3 (index 2): characterId, weekday, time, title, entryType
+    const startIndex = 3;
 
-    if (parts[2]) {
-        const typeStr = parts[2].toLowerCase();
-        if (typeStr.includes('collab')) type = 'collab'; // Map all collab subtypes to 'collab' for now, or handle specifically if needed
-        else if (typeStr === 'video') type = 'video';
-        else if (typeStr === 'off') type = 'off';
+    for (let i = startIndex; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row[0]) continue; // Skip empty characterId
+
+        const charId = row[0].trim();
+        const weekday = row[1]?.trim().toUpperCase();
+        const time = row[2]?.trim() || '';
+        const title = row[3]?.trim() || '';
+        const entryType = row[4]?.trim().toLowerCase() || '';
+
+        const character = characters.find(c => c.id === charId);
+        if (character && weekday && ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].includes(weekday)) {
+            let type: 'stream' | 'collab' | 'collab_maivi' | 'collab_hanavi' | 'collab_universe' | 'off' = 'stream';
+
+            if (entryType === 'off') {
+                type = 'off';
+            } else if (entryType === 'collab_maivi') {
+                type = 'collab_maivi';
+            } else if (entryType === 'collab_hanavi') {
+                type = 'collab_hanavi';
+            } else if (entryType === 'collab_universe') {
+                type = 'collab_universe';
+            } else if (entryType.includes('collab')) {
+                type = 'collab';
+            }
+
+            // If type is off, ensure content says '휴방' if empty, or use title if provided
+            const content = type === 'off' ? (title || '휴방') : title;
+
+            character.schedule[weekday as keyof typeof character.schedule] = {
+                time,
+                content,
+                type
+            };
+        }
     }
 
-    // Preserve the specific collab type in content if needed, or just rely on the 'collab' type
-    // The UI might need to distinguish between collab types if they have different styling.
-    // For now, let's keep the content as is.
-
-    return {
-        time,
-        content,
-        type
-    };
+    return { weekRange };
 }

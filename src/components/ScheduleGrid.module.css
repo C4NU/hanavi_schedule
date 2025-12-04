@@ -226,6 +226,15 @@
     margin-bottom: 5px;
 }
 
+.avatarImage {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 5px;
+    background-color: white;
+}
+
 .scheduleCell {
     padding: 10px;
     border-radius: 10px;
@@ -361,13 +370,42 @@
 }
 
 /* Special Events */
-.maybeCollab {
-    background-color: var(--color-maybe-bg) !important;
-    border-color: var(--color-maybe-border) !important;
+/* Special Events */
+.collab_maivi {
+    background-color: var(--color-maivi-bg) !important;
+    border-color: var(--color-maivi-border) !important;
 }
 
-.maybeCollab .time {
-    color: var(--color-maybe-time) !important;
+.collab_maivi .time {
+    color: var(--color-maivi-time) !important;
+}
+
+.collab_universe {
+    background-color: var(--color-universe-bg) !important;
+    border-color: var(--color-universe-border) !important;
+}
+
+.collab_universe .time {
+    color: var(--color-universe-time) !important;
+}
+
+.collab_hanavi {
+    background-color: var(--color-hanavi-bg) !important;
+    border-color: var(--color-hanavi-border) !important;
+}
+
+.collab_hanavi .time {
+    color: var(--color-hanavi-time) !important;
+}
+
+/* Generic Collab - Default to Universe/Pink style */
+.collab {
+    background-color: var(--color-universe-bg) !important;
+    border-color: var(--color-universe-border) !important;
+}
+
+.collab .time {
+    color: var(--color-universe-time) !important;
 }
 
 /* Mobile Responsive */
