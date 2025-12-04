@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import ScheduleGrid from '@/components/ScheduleGrid';
-import PushTester from '@/components/PushTester';
 import { useSchedule } from "@/hooks/useSchedule";
 import html2canvas from "html2canvas";
 
@@ -57,7 +56,6 @@ export default function Home() {
   return (
     <main className="main-layout">
       <ScheduleGrid ref={scheduleRef} data={schedule} onExport={handleExport} />
-      <PushTester />
     </main>
   );
 }

@@ -108,7 +108,12 @@ async function sendPushNotifications(pendingHash?: string) {
                 endpoint: sub.endpoint,
                 keys: sub.keys
             };
-            return webpush.sendNotification(pushSubscription, payload)
+            return webpush.sendNotification(pushSubscription, payload, {
+                headers: {
+                    'Urgency': 'high',
+                    'TTL': '86400' // 24 hours
+                }
+            })
                 .catch(err => {
                     if (err.statusCode === 410 || err.statusCode === 404) {
                         return supabaseAdmin.from('subscriptions').delete().eq('id', sub.id);
@@ -170,7 +175,6 @@ export async function GET(request: Request) {
         }
 
         // direct: old behavior (detect and immediately notify)
-        console.log('[Cron] Direct mode: detect and notify.');
         const result = await detectScheduleChange();
         if (!result.changed) {
             return NextResponse.json({ message: 'No changes detected.' });

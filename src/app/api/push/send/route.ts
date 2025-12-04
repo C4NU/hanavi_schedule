@@ -18,21 +18,12 @@ if (vapidPublicKey && vapidPrivateKey) {
 
 export async function POST(request: Request) {
     try {
-        console.log('Push notification request received');
-
         // 1. Verify Admin Secret (Simple security)
         const bodyData = await request.json();
         const { secret, title, body } = bodyData;
         const adminSecret = process.env.ADMIN_SECRET;
 
-        console.log('Admin Secret Check:', {
-            provided: secret ? '***' : 'missing',
-            expected: adminSecret ? '***' : 'missing',
-            match: secret === adminSecret
-        });
-
         if (!adminSecret || secret !== adminSecret) {
-            console.error('Unauthorized: Invalid Admin Secret');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -46,15 +37,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to fetch subscriptions' }, { status: 500 });
         }
 
-        console.log(`Found ${subscriptions?.length || 0} subscriptions`);
-
         if (!subscriptions || subscriptions.length === 0) {
             return NextResponse.json({ message: 'No subscriptions found' });
         }
 
         // 3. Send Notifications
         const payload = JSON.stringify({
-            title: title ? `[배경 알림] ${title}` : '[배경 알림] 하나비 스케줄 업데이트',
+            title: title || '하나비 스케줄 업데이트',
             body: body || '스케줄이 업데이트되었습니다. 확인해보세요!',
             icon: '/icon-192x192.png'
         });
@@ -67,7 +56,12 @@ export async function POST(request: Request) {
                     keys: sub.keys
                 };
 
-                return webpush.sendNotification(pushSubscription, payload)
+                return webpush.sendNotification(pushSubscription, payload, {
+                    headers: {
+                        'Urgency': 'high',
+                        'TTL': '86400'
+                    }
+                })
                     .catch(err => {
                         console.error('WebPush Send Error:', err.statusCode, err.body, sub.endpoint);
                         if (err.statusCode === 410 || err.statusCode === 404) {
@@ -81,8 +75,6 @@ export async function POST(request: Request) {
 
         const successCount = results.filter(r => r.status === 'fulfilled').length;
         const failureCount = results.length - successCount;
-
-        console.log(`Push Result: Success=${successCount}, Failed=${failureCount}`);
 
         return NextResponse.json({
             success: true,
