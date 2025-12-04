@@ -38,79 +38,6 @@ async function getAuth() {
     }
 }
 
-export async function getScheduleFromSheet(): Promise<WeeklySchedule | null> {
-    if (!SHEET_ID) {
-        console.error('GOOGLE_SHEET_ID is not defined');
-        return null;
-    }
-
-    console.log('Fetching schedule from Google Sheet...');
-
-    const auth = await getAuth();
-    if (!auth) {
-        console.error('Failed to authenticate with Google Sheets API');
-        return null;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sheets = google.sheets({ version: 'v4', auth: auth as any });
-
-    try {
-        // 1. Get the spreadsheet metadata to find sheet names
-        const metadata = await sheets.spreadsheets.get({
-            spreadsheetId: SHEET_ID,
-        });
-
-        const sheetList = metadata.data.sheets;
-        if (!sheetList || sheetList.length === 0) {
-            console.error('No sheets found in the spreadsheet');
-            return null;
-        }
-
-        // Find specific sheets by name
-        const profileSheet = sheetList.find(s => s.properties?.title === '프로필 정보');
-        // Assume the other one is schedule, or look for '방송 스케줄'
-        const scheduleSheet = sheetList.find(s => s.properties?.title?.includes('방송 스케줄')) || sheetList[0];
-
-        // 2. Fetch Profile Data (using spreadsheets.get to retrieve hyperlinks)
-        let characters: CharacterSchedule[] = [];
-        if (profileSheet && profileSheet.properties?.title) {
-            // We need includeGridData: true to get hyperlinks
-            const profileResponse = await sheets.spreadsheets.get({
-                spreadsheetId: SHEET_ID,
-                ranges: [`${profileSheet.properties.title}!A:E`], // ID, Name, Theme, Avatar URL, Chzzk URL
-                includeGridData: true,
-            });
-
-            const sheetData = profileResponse.data.sheets?.[0]?.data?.[0]?.rowData;
-            characters = parseProfileSheetWithHyperlinks(sheetData);
-        } else {
-            console.warn("'프로필 정보' sheet not found, using default/empty characters");
-        }
-
-        // 3. Fetch Schedule Data
-        let weekRange = '';
-        if (scheduleSheet && scheduleSheet.properties?.title) {
-            const scheduleResponse = await sheets.spreadsheets.values.get({
-                spreadsheetId: SHEET_ID,
-                range: `${scheduleSheet.properties.title}!A:E`, // weekRange at top, then data columns
-            });
-            const scheduleData = parseScheduleSheet(scheduleResponse.data.values, characters);
-            weekRange = scheduleData.weekRange;
-            // Characters are updated in-place within parseScheduleSheet
-        }
-
-        return {
-            weekRange: weekRange || '날짜 미정',
-            characters
-        };
-
-    } catch (error) {
-        console.error('Error fetching data from Google Sheets:', error);
-        return null;
-    }
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseProfileSheetWithHyperlinks(rowData: any[] | undefined): CharacterSchedule[] {
     if (!rowData || rowData.length < 2) return []; // No data or just header
@@ -206,4 +133,77 @@ function parseScheduleSheet(rows: string[][] | undefined | null, characters: Cha
     }
 
     return { weekRange };
+}
+
+export async function getScheduleFromSheet(): Promise<WeeklySchedule | null> {
+    if (!SHEET_ID) {
+        console.error('GOOGLE_SHEET_ID is not defined');
+        return null;
+    }
+
+    console.log('Fetching schedule from Google Sheet...');
+
+    const auth = await getAuth();
+    if (!auth) {
+        console.error('Failed to authenticate with Google Sheets API');
+        return null;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sheets = google.sheets({ version: 'v4', auth: auth as any });
+
+    try {
+        // 1. Get the spreadsheet metadata to find sheet names
+        const metadata = await sheets.spreadsheets.get({
+            spreadsheetId: SHEET_ID,
+        });
+
+        const sheetList = metadata.data.sheets;
+        if (!sheetList || sheetList.length === 0) {
+            console.error('No sheets found in the spreadsheet');
+            return null;
+        }
+
+        // Find specific sheets by name
+        const profileSheet = sheetList.find(s => s.properties?.title === '프로필 정보');
+        // Assume the other one is schedule, or look for '방송 스케줄'
+        const scheduleSheet = sheetList.find(s => s.properties?.title?.includes('방송 스케줄')) || sheetList[0];
+
+        // 2. Fetch Profile Data (using spreadsheets.get to retrieve hyperlinks)
+        let characters: CharacterSchedule[] = [];
+        if (profileSheet && profileSheet.properties?.title) {
+            // We need includeGridData: true to get hyperlinks
+            const profileResponse = await sheets.spreadsheets.get({
+                spreadsheetId: SHEET_ID,
+                ranges: [`${profileSheet.properties.title}!A:E`], // ID, Name, Theme, Avatar URL, Chzzk URL
+                includeGridData: true,
+            });
+
+            const sheetData = profileResponse.data.sheets?.[0]?.data?.[0]?.rowData;
+            characters = parseProfileSheetWithHyperlinks(sheetData);
+        } else {
+            console.warn("'프로필 정보' sheet not found, using default/empty characters");
+        }
+
+        // 3. Fetch Schedule Data
+        let weekRange = '';
+        if (scheduleSheet && scheduleSheet.properties?.title) {
+            const scheduleResponse = await sheets.spreadsheets.values.get({
+                spreadsheetId: SHEET_ID,
+                range: `${scheduleSheet.properties.title}!A:E`, // weekRange at top, then data columns
+            });
+            const scheduleData = parseScheduleSheet(scheduleResponse.data.values, characters);
+            weekRange = scheduleData.weekRange;
+            // Characters are updated in-place within parseScheduleSheet
+        }
+
+        return {
+            weekRange: weekRange || '날짜 미정',
+            characters
+        };
+
+    } catch (error) {
+        console.error('Error fetching data from Google Sheets:', error);
+        return null;
+    }
 }

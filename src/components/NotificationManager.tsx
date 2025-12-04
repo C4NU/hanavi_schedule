@@ -177,26 +177,32 @@ export default function NotificationManager() {
     if (!showPermissionModal) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300">
-            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center transform transition-all duration-300 scale-100 border border-white/20">
-                <div className="text-5xl mb-6 animate-bounce">🔔</div>
-                <h3 className="text-2xl font-bold mb-3 text-gray-800">알림 설정</h3>
-                <p className="text-gray-600 mb-8 text-lg leading-relaxed">
-                    스케줄이 업데이트되면<br />
-                    가장 먼저 알려드릴까요?
-                </p>
-                <div className="flex flex-col gap-3">
-                    <button
-                        onClick={handlePermissionRequest}
-                        className="w-full py-3.5 rounded-xl bg-blue-500 text-white font-bold text-lg hover:bg-blue-600 transition-all shadow-lg hover:shadow-blue-500/30 active:scale-95"
-                    >
-                        네, 알려주세요!
-                    </button>
+        <div className="fixed inset-0 bg-black/30 z-[9999] flex items-center justify-center animate-fade-in font-[-apple-system,BlinkMacSystemFont,sans-serif] p-4">
+            <div className="bg-white rounded-[14px] shadow-2xl p-8 min-w-[300px] max-w-[360px] text-center animate-scale-in">
+                {/* 제목 + 본문 */}
+                <div className="space-y-2 mb-7">
+                    <h3 className="text-[17px] font-bold text-[#333333]">
+                        알림 설정
+                    </h3>
+                    <p className="text-[14px] text-[#333333]/80 leading-relaxed">
+                        스케줄이 변경되면<br />
+                        가장 먼저 알려드릴까요?
+                    </p>
+                </div>
+
+                {/* 버튼 영역 */}
+                <div className="flex gap-3">
                     <button
                         onClick={() => setShowPermissionModal(false)}
-                        className="w-full py-3.5 rounded-xl bg-gray-100 text-gray-500 font-medium hover:bg-gray-200 transition-colors"
+                        className="flex-1 py-3 text-[14px] font-bold text-[#333333] bg-[#fff0f5] rounded-[10px] active:bg-[#ffe4e1] transition-colors border border-[#ffb6c1]/30"
                     >
-                        괜찮아요
+                        허용 안 함
+                    </button>
+                    <button
+                        onClick={handlePermissionRequest}
+                        className="flex-1 py-3 text-[14px] font-bold text-white bg-[#ffb6c1] rounded-[10px] active:bg-[#ff9aa2] transition-colors shadow-sm"
+                    >
+                        허용
                     </button>
                 </div>
             </div>
