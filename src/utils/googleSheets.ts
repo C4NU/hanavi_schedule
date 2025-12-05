@@ -17,7 +17,8 @@ async function getAuth() {
         const auth = new google.auth.GoogleAuth({
             credentials: {
                 client_email: CLIENT_EMAIL,
-                private_key: PRIVATE_KEY.replace(/\\n/g, '\n'),
+                // Handle both literal \n and real newlines, and strip surrounding quotes if present
+                private_key: PRIVATE_KEY.replace(/\\n/g, '\n').replace(/"/g, ''),
             },
             scopes: SCOPES,
         });
