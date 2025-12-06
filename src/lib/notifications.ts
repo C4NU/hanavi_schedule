@@ -39,18 +39,22 @@ export async function sendMulticastNotification(title: string, body: string, ico
 
         // 3. 알림 전송
         for (const chunk of chunks) {
-            // Data-only payload to prevent duplicate notifications
-            // Service worker will handle the display
+            // Revert to notification payload for reliable delivery
             const message = {
-                data: {
+                notification: {
                     title,
                     body,
-                    icon,
+                },
+                data: {
                     url: '/'
                 },
                 webpush: {
                     headers: {
                         'Urgency': 'high',
+                    },
+                    notification: {
+                        icon,
+                        click_action: '/'
                     }
                 },
                 tokens: chunk
