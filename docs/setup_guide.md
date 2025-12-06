@@ -94,15 +94,19 @@
 | 이름 (Key) | 값 (Value) | 설명 |
 | :--- | :--- | :--- |
 | `GOOGLE_SHEET_ID` | 구글 시트 주소의 중간 부분 | `docs.google.com/spreadsheets/d/`**여기**`/edit` |
-| `GOOGLE_SERVICE_ACCOUNT_EMAIL` | 아까 만든 이메일 주소 | Google Cloud JSON 파일의 `client_email` |
+| `GOOGLE_CLIENT_EMAIL` | 아까 만든 이메일 주소 | Google Cloud JSON 파일의 `client_email` |
 | `GOOGLE_PRIVATE_KEY` | 아까 다운받은 키 내용 | Google Cloud JSON 파일의 `private_key` (전체 복사) |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | 아까 만든 Public Key | 4번 단계에서 만든 것 |
-| `VAPID_PRIVATE_KEY` | 아까 만든 Private Key | 4번 단계에서 만든 것 |
-| `VAPID_SUBJECT` | `mailto:내이메일@gmail.com` | 연락처 (형식 지켜주세요) |
 | `ADMIN_SECRET` | 원하는 비밀번호 | 아무거나 (예: `mypassword123`) |
 | `FIREBASE_PROJECT_ID` | Firebase 프로젝트 ID | Firebase JSON의 `project_id` |
 | `FIREBASE_CLIENT_EMAIL` | Firebase 서비스 계정 이메일 | Firebase JSON의 `client_email` |
 | `FIREBASE_PRIVATE_KEY` | Firebase 서비스 계정 키 | Firebase JSON의 `private_key` (전체 복사) |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase 클라이언트 설정 | 프로젝트 설정 > 일반 > 내 앱 > SDK 설정 및 구성 |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase 클라이언트 설정 | 프로젝트 설정 > 일반 > 내 앱 > SDK 설정 및 구성 |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase 클라이언트 설정 | 프로젝트 설정 > 일반 > 내 앱 > SDK 설정 및 구성 |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase 클라이언트 설정 | 프로젝트 설정 > 일반 > 내 앱 > SDK 설정 및 구성 |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase 클라이언트 설정 | 프로젝트 설정 > 일반 > 내 앱 > SDK 설정 및 구성 |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase 클라이언트 설정 | 프로젝트 설정 > 일반 > 내 앱 > SDK 설정 및 구성 |
 
 5.  다 입력했으면 **"Deploy"** 버튼을 누릅니다.
 6.  폭죽이 터지면 성공입니다! 🎉
