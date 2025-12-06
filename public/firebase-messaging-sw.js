@@ -1,8 +1,14 @@
 
 // Scripts for firebase messaging service worker
+// Version: 1.2 (Force update)
 
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
+
+// Force service worker to activate immediately
+self.addEventListener('install', () => {
+    self.skipWaiting();
+});
 
 // Initialize the Firebase app in the service worker by passing in the
 // messagingSenderId.
