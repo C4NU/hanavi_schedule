@@ -96,14 +96,14 @@ Google Sheets를 통해 데이터를 관리합니다.
    - `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
    - `VAPID_PRIVATE_KEY`
    - `VAPID_SUBJECT`
-   - `CRON_SECRET`
+   - `VAPID_SUBJECT`
+   - `ADMIN_SECRET`
 3. 자동 빌드 및 배포
 
-## ⏱️ 크론 (배경 푸시)
-- `/api/cron/check-schedule?mode=detect` : 변경 감지만 하고 플래그 설정 (3분 주기 추천)
-- `/api/cron/check-schedule?mode=notify` : 변경 플래그가 있을 때만 푸시 전송 (10분 주기 추천)
-- 기본값 `mode=direct` 는 감지+전송을 한 번에 수행 (수동 테스트용)
-- 호출 시 `Authorization: Bearer ${CRON_SECRET}` 헤더를 함께 보내세요.
+## 📊 자동 업데이트 (Google Apps Script)
+구글 시트의 변경사항을 실시간으로 감지하여 푸시 알림을 전송합니다.
+1. `docs/setup_guide.md`의 **6. 자동 알림 켜기** 섹션을 참고하여 Google Apps Script를 설정하세요.
+2. 이제 스케줄 시트를 수정하면 자동으로 사용자에게 알림이 전송됩니다.
 
 ## 📄 라이선스
 

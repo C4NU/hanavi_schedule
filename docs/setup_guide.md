@@ -116,22 +116,29 @@ create policy "Enable all access for service role" on system_state for all to se
 | `VAPID_PRIVATE_KEY` | 아까 만든 Private Key | 4번 단계에서 만든 것 |
 | `VAPID_SUBJECT` | `mailto:내이메일@gmail.com` | 연락처 (형식 지켜주세요) |
 | `ADMIN_SECRET` | 원하는 비밀번호 | 아무거나 (예: `mypassword123`) |
-| `CRON_SECRET` | 원하는 비밀번호 | 아무거나 (예: `cron_token_abc`) |
+| `FIREBASE_PROJECT_ID` | Firebase 프로젝트 ID | Firebase 콘솔 > 프로젝트 설정 > 일반 |
+| `FIREBASE_CLIENT_EMAIL` | Firebase 서비스 계정 이메일 | Firebase 콘솔 > 프로젝트 설정 > 서비스 계정 |
+| `FIREBASE_PRIVATE_KEY` | Firebase 서비스 계정 키 | 서비스 계정 새 키 생성 후 JSON 내용 확인 |
 
 5.  다 입력했으면 **"Deploy"** 버튼을 누릅니다.
 6.  폭죽이 터지면 성공입니다! 🎉
 
 ---
 
-## 6. 자동 알림 켜기 (GitHub Actions)
+## 6. 자동 알림 켜기 (Google Apps Script)
 
-마지막입니다! 5분마다 자동으로 스케줄을 확인하게 만듭니다.
+마지막입니다! 구글 시트가 변경되면 자동으로 알림을 보내도록 설정합니다.
 
-1.  GitHub 저장소의 **Settings** -> **Secrets and variables** -> **Actions** 메뉴로 갑니다.
-2.  **New repository secret**을 누르고 하나를 추가합니다.
-    *   **Name**: `CRON_SECRET`
-    *   **Secret**: 아까 Vercel에 입력했던 `CRON_SECRET`과 똑같은 값
-3.  이제 끝났습니다! 5분마다 자동으로 확인하고, 스케줄이 바뀌면 알림을 보냅니다.
+1.  스케줄 구글 시트를 엽니다.
+2.  상단 메뉴에서 **확장 프로그램** > **Apps Script**를 선택합니다.
+3.  기존 내용을 다 지우고, [이 코드](https://github.com/C4NU/hanavi_schedule/tree/main/google_apps_script.js) (저장소의 `google_apps_script.js` 파일 내용)를 복사해서 붙여넣습니다.
+4.  코드 상단의 `CONFIG` 내용을 수정합니다:
+    *   `WEBHOOK_URL`: 배포된 웹사이트 주소 뒤에 `/api/webhook/schedule-update`를 붙인 것
+    *   `ADMIN_SECRET`: 아까 Vercel에 입력한 `ADMIN_SECRET` 값
+    *   `TARGET_SHEET_NAME`: 감지할 시트 탭 이름 (예: `Schedule`)
+5.  저장(💾) 버튼을 누르고, 함수 선택 박스에서 `setupTrigger`를 선택한 뒤 **실행(▷)** 버튼을 누릅니다.
+6.  (권한 요청 창이 뜨면 허용해주세요.)
+7.  이제 끝났습니다! 시트 내용을 수정하면 사용자들에게 알림이 전송됩니다.
 
 ---
 
@@ -141,7 +148,8 @@ create policy "Enable all access for service role" on system_state for all to se
 A. 아이패드/아이폰은 홈 화면에 **"공유 -> 홈 화면에 추가"**를 해야만 알림이 옵니다. 앱을 설치하고 실행한 뒤 알림 권한을 허용해주세요.
 
 **Q. 스케줄을 바꿨는데 바로 알림이 안 와요.**
-A. 5분 주기로 확인하므로, 최대 5분 정도 기다려야 할 수 있습니다.
+A. 보통 즉시 오지만, 네트워크 상황에 따라 몇 초 정도 걸릴 수 있습니다.
 
 **Q. "구독됨"이라고 뜨는데 알림이 안 와요.**
 A. 키가 바뀌었을 수 있습니다. **[2. 강제 재구독]** 버튼을 눌러보세요.
+
