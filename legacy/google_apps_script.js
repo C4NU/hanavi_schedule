@@ -1,5 +1,5 @@
 /**
- * 하나비 스케줄 알림용 구글 Apps Script (MK2 - Debounce 적용 버전)
+ * 하나비 스케줄 알림용 구글 Apps Script
  * 
  * 사용법:
  * 1. 구글 시트를 엽니다.
@@ -15,93 +15,25 @@ const CONFIG = {
     ADMIN_SECRET: 'YOUR_ADMIN_SECRET_HERE',
     // 감지할 시트(탭)의 이름입니다
     TARGET_SHEET_NAME: 'Schedule',
-    // 입력 대기 시간 (밀리초 단위, 60초 = 60000)
-    DEBOUNCE_WAIT_MS: 60 * 1000
+    // 시간 기반 트리거 사용 시 체크 주기 (분 단위)
+    CHECK_INTERVAL_MINUTES: 5
 };
 
 function setupTrigger() {
-    // 기존 트리거 제거 (중복 방지 및 핸들러 변경 적용)
+    // 기존 트리거 제거 (중복 방지)
     const triggers = ScriptApp.getProjectTriggers();
     triggers.forEach(t => ScriptApp.deleteTrigger(t));
 
-    // 변경 감지(onChange) 트리거 - onEditHandler 연결
-    ScriptApp.newTrigger('onEditHandler')
+    // 변경 감지(onChange) 트리거 생성
+    ScriptApp.newTrigger('checkAndUpdate')
         .forSpreadsheet(SpreadsheetApp.getActive())
         .onChange()
         .create();
 
-    // 초기화 시 스케줄링 플래그도 초기화
-    PropertiesService.getScriptProperties().deleteProperty('TRIGGER_SCHEDULED');
-    PropertiesService.getScriptProperties().deleteProperty('LAST_EDIT_TIME');
-
-    Logger.log('트리거가 성공적으로 설정되었습니다. (핸들러: onEditHandler)');
+    Logger.log('트리거가 성공적으로 설정되었습니다.');
 }
 
-/**
- * 시트가 변경될 때마다 호출되는 함수
- * 실제 로직을 바로 실행하지 않고, "마지막 수정 시간"을 갱신하며
- * 예약된 실행(processBufferedChanges)이 없으면 예약을 건다.
- */
-function onEditHandler(e) {
-    const props = PropertiesService.getScriptProperties();
-    // 마지막 수정 시간 갱신
-    props.setProperty('LAST_EDIT_TIME', new Date().getTime().toString());
-
-    // 이미 처리가 예약되어 있는지 확인
-    const isScheduled = props.getProperty('TRIGGER_SCHEDULED');
-
-    if (isScheduled !== 'true') {
-        // 예약되어 있지 않다면, 설정된 대기 시간 뒤 실행되도록 트리거 생성
-        ScriptApp.newTrigger('processBufferedChanges')
-            .timeBased()
-            .after(CONFIG.DEBOUNCE_WAIT_MS)
-            .create();
-
-        props.setProperty('TRIGGER_SCHEDULED', 'true');
-        Logger.log('변경 감지: 처리 예약됨 (1분 대기)');
-    } else {
-        Logger.log('변경 감지: 처리 예약 중이므로 시간만 갱신');
-    }
-}
-
-/**
- * 예약된 시간에 실행되는 실제 처리 함수
- * 마지막 수정 시간으로부터 충분한 시간이 지났는지 확인하고 진행
- */
-function processBufferedChanges() {
-    const props = PropertiesService.getScriptProperties();
-    const lastEditTime = parseInt(props.getProperty('LAST_EDIT_TIME') || '0');
-    const now = new Date().getTime();
-
-    // 마지막 수정 후 경과 시간 확인
-    if (now - lastEditTime < CONFIG.DEBOUNCE_WAIT_MS) {
-        // 아직 대기 시간이 안 지났음 (예약된 사이에 추가 수정 발생) -> 다시 예약
-        Logger.log('아직 수정 중입니다. 처리를 다시 미룹니다.');
-
-        // 이 트리거는 실행 후 소멸되므로, 새로운 트리거를 생성해야 함
-        ScriptApp.newTrigger('processBufferedChanges')
-            .timeBased()
-            .after(CONFIG.DEBOUNCE_WAIT_MS)
-            .create();
-
-        // TRIGGER_SCHEDULED는 여전히 true 유지
-        return;
-    }
-
-    // 충분한 시간이 지났으므로 로직 실행
-    // 실행 전 플래그 해제 (실행 중에 수정 들어오면 다시 예약 걸리도록)
-    props.setProperty('TRIGGER_SCHEDULED', 'false');
-
-    Logger.log('입력 대기 종료. 변경사항 체크 시작...');
-
-    // 실제 변경사항 확인 로직 실행
-    checkSaveChanges_();
-}
-
-/**
- * 실제 변경사항을 확인하고 웹훅을 보내는 로직 (구 checkAndUpdate)
- */
-function checkSaveChanges_() {
+function checkAndUpdate(e) {
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.TARGET_SHEET_NAME);
     if (!sheet) {
         Logger.log('대상 시트를 찾을 수 없습니다.');
@@ -143,6 +75,7 @@ function checkSaveChanges_() {
     const lastMemberHashes = lastMemberHashesJson ? JSON.parse(lastMemberHashesJson) : {};
 
     // 이름 매핑 (ID -> 한글 표시명)
+    // 필요하면 시트의 프로필 탭에서 읽어올 수도 있지만, 하드코딩이 빠르고 안전할 수 있음
     const memberNamemap = {
         'varessa': '바레사',
         'nemu': '네무',
@@ -174,6 +107,8 @@ function checkSaveChanges_() {
         const changedMembers = [];
         for (const charId in currentMemberHashes) {
             if (currentMemberHashes[charId] !== lastMemberHashes[charId]) {
+                // 기존에 데이터가 있었던 경우에만 '수정'으로 간주 (아예 처음 추가는 제외하거나 포함할지 결정)
+                // 여기서는 단순 변경 감지
                 const name = memberNamemap[charId] || charId;
                 changedMembers.push(name);
             }
