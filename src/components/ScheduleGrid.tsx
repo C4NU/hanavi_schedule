@@ -23,6 +23,14 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport }, ref)
     const [touchStart, setTouchStart] = useState<number | null>(null);
     const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
+    // Set initial day to current day of week on mount (Client-side only to avoid hydration mismatch)
+    React.useEffect(() => {
+        const today = new Date().getDay(); // 0 (Sun) - 6 (Sat)
+        // Convert to 0 (Mon) - 6 (Sun)
+        const initialIndex = (today + 6) % 7;
+        setCurrentDayIndex(initialIndex);
+    }, []);
+
     // Minimum swipe distance (in px)
     const minSwipeDistance = 50;
 
