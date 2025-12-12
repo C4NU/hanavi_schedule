@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.87.1",
     "firebase": "^12.6.0",
     "firebase-admin": "^13.6.0",
     "googleapis": "^166.0.0",

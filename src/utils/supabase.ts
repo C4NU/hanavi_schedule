@@ -1,0 +1,180 @@
+import { createClient } from '@supabase/supabase-js';
+import { WeeklySchedule, CharacterSchedule, ScheduleItem } from '@/types/schedule';
+
+// Server-side client with Service Role for admin access
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+export async function saveScheduleToSupabase(data: WeeklySchedule): Promise<boolean> {
+    try {
+        if (!supabaseUrl || !supabaseServiceKey) {
+            console.error('Supabase credentials missing');
+            return false;
+        }
+
+        console.log('Saving schedule to Supabase for week:', data.weekRange);
+
+        // 1. Upsert Schedule (to ensure ID exists and is active)
+        // We'll search by week_range
+        const { data: scheduleData, error: scheduleError } = await supabase
+            .from('schedules')
+            .upsert({
+                week_range: data.weekRange,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'week_range' })
+            .select()
+            .single();
+
+        if (scheduleError) {
+            console.error('Error saving schedule to Supabase:', scheduleError);
+            return false;
+        }
+
+        const scheduleId = scheduleData.id;
+
+        // 2. Prepare Items
+        const itemsToInsert: Record<string, any>[] = [];
+        const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
+        // Iterate through all characters
+        for (const char of data.characters) {
+            // Iterate through all days 
+            // The data structure is: char.schedule[dayIndex] -> { time, content, type... }
+            // Wait, WeeklySchedule type might vary. Let's assume standard structure.
+            // If char.schedule represents days by index 0-6 matching MON-SUN
+
+            // The data structure is: char.schedule { "MON": { time, content... }, "TUE": ... }
+            if (char.schedule) {
+                days.forEach(day => {
+                    const item = char.schedule[day];
+                    if (item) {
+                        itemsToInsert.push({
+                            schedule_id: scheduleId,
+                            character_id: char.id,
+                            day: day,
+                            time: item.time,
+                            content: item.content,
+                            type: item.type || 'stream'
+                        });
+                    }
+                });
+            }
+        }
+
+        // 3. Delete existing items for this schedule & Upsert new ones
+        // Since we want to replace the week's data, we can delete by schedule_id first 
+        // OR better: upsert based on unique constraint (schedule_id, character_id, day).
+        // The schema has: constraint unique_schedule_item unique (schedule_id, character_id, day)
+
+        const { error: itemsError } = await supabase
+            .from('schedule_items')
+            .upsert(itemsToInsert, { onConflict: 'schedule_id,character_id,day' });
+
+        if (itemsError) {
+            console.error('Error saving items to Supabase:', itemsError);
+            return false;
+        }
+
+        console.log('Successfully saved to Supabase');
+        return true;
+
+    } catch (error) {
+        console.error('Unexpected error saving to Supabase:', error);
+        return false;
+    }
+}
+
+export async function getScheduleFromSupabase(): Promise<WeeklySchedule | null> {
+    try {
+        if (!supabaseUrl || !supabaseServiceKey) return null;
+
+        // 1. Get Active Schedule
+        const { data: scheduleData, error: scheduleError } = await supabase
+            .from('schedules')
+            .select('*')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        if (scheduleError || !scheduleData) {
+            console.warn('No active schedule found in Supabase');
+            return null;
+        }
+
+        const weekRange = scheduleData.week_range;
+        const scheduleId = scheduleData.id;
+
+        // 2. Get All Characters (to ensure we return all even if no schedule)
+        const { data: charactersData, error: charError } = await supabase
+            .from('characters')
+            .select('*');
+
+        if (charError || !charactersData) {
+            console.error('Error fetching characters:', charError);
+            return null;
+        }
+
+        // 3. Get Schedule Items
+        const { data: itemsData, error: itemsError } = await supabase
+            .from('schedule_items')
+            .select('*')
+            .eq('schedule_id', scheduleId);
+
+        if (itemsError) {
+            console.error('Error fetching schedule items:', itemsError);
+            return null;
+        }
+
+        // 4. Transform to WeeklySchedule
+        const characters: CharacterSchedule[] = charactersData.map((char: any) => {
+            const charId = char.id;
+            const charItems = itemsData?.filter((item: any) => item.character_id === charId) || [];
+
+            const scheduleObj: { [key: string]: ScheduleItem } = {
+                MON: { time: '', content: '휴방', type: 'off' },
+                TUE: { time: '', content: '휴방', type: 'off' },
+                WED: { time: '', content: '휴방', type: 'off' },
+                THU: { time: '', content: '휴방', type: 'off' },
+                FRI: { time: '', content: '휴방', type: 'off' },
+                SAT: { time: '', content: '휴방', type: 'off' },
+                SUN: { time: '', content: '휴방', type: 'off' },
+            };
+
+            charItems.forEach((item: any) => {
+                if (item.day) {
+                    scheduleObj[item.day] = {
+                        time: item.time || '',
+                        content: item.content || '',
+                        type: item.type as any || 'stream'
+                    };
+                }
+            });
+
+            return {
+                id: char.id,
+                name: char.name,
+                colorTheme: char.color_theme,
+                avatarUrl: char.avatar_url,
+                chzzkUrl: char.chzzk_url,
+                schedule: scheduleObj
+            } as CharacterSchedule;
+        });
+
+        // Sort characters (optional, but good to match defined order)
+        // Order: varessa, nemu, maroka, mirai, ruvi, iriya
+        const order = ['varessa', 'nemu', 'maroka', 'mirai', 'ruvi', 'iriya'];
+        characters.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+
+        return {
+            weekRange,
+            characters
+        };
+
+    } catch (error) {
+        console.error('Error getting schedule from Supabase:', error);
+        return null;
+    }
+}

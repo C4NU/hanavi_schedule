@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSchedule } from '@/hooks/useSchedule';
 import { WeeklySchedule, ScheduleItem } from '@/types/schedule';
 
@@ -54,7 +54,12 @@ export default function AdminPage() {
             const [start, end] = range.split(' - ');
             const [sM, sD] = start.split('.');
             const [eM, eD] = end.split('.');
-            return { sM, sD, eM, eD };
+            return {
+                sM: parseInt(sM).toString(),
+                sD: parseInt(sD).toString(),
+                eM: parseInt(eM).toString(),
+                eD: parseInt(eD).toString()
+            };
         } catch (e) {
             return null;
         }
@@ -141,9 +146,64 @@ export default function AdminPage() {
         window.location.reload();
     };
 
+    // Notification Logic
+    const [notifyStatus, setNotifyStatus] = useState<'idle' | 'pending' | 'sending' | 'sent' | 'error'>('idle');
+    const [timeLeft, setTimeLeft] = useState(0);
+    const notifyTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+        return () => {
+            if (notifyTimerRef.current) clearTimeout(notifyTimerRef.current);
+        };
+    }, []);
+
+    // Countdown Effect
+    useEffect(() => {
+        if (timeLeft > 0 && notifyStatus === 'pending') {
+            const timer = setTimeout(() => setTimeLeft(prev => prev - 1), 1000);
+            return () => clearTimeout(timer);
+        } else if (timeLeft === 0 && notifyStatus === 'pending') {
+            sendNotification();
+        }
+    }, [timeLeft, notifyStatus]);
+
+    const sendNotification = async () => {
+        setNotifyStatus('sending');
+        try {
+            const res = await fetch('/api/push/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    secret: password,
+                    title: '스케줄 업데이트 📢',
+                    body: '이번 주 스케줄이 수정되었습니다! 확인해보세요 ✨'
+                })
+            });
+            if (res.ok) {
+                setNotifyStatus('sent');
+                setTimeout(() => setNotifyStatus('idle'), 5000); // Reset after 5s
+            } else {
+                setNotifyStatus('error');
+            }
+        } catch (e) {
+            console.error(e);
+            setNotifyStatus('error');
+        }
+    };
+
+    const cancelNotification = () => {
+        if (notifyTimerRef.current) clearTimeout(notifyTimerRef.current);
+        setNotifyStatus('idle');
+        setTimeLeft(0);
+    };
+
     const handleSave = async () => {
         if (!editSchedule) return;
         setIsSaving(true);
+        // Cancel any pending notification on new save
+        if (notifyStatus === 'pending') cancelNotification();
+
         try {
             const res = await fetch('/api/admin/schedule', {
                 method: 'POST',
@@ -155,8 +215,13 @@ export default function AdminPage() {
             });
 
             if (res.ok) {
-                alert('저장되었습니다!');
+                // alert('저장되었습니다!'); // Removed alert to be less intrusive with auto-notify
                 localStorage.setItem('hanavi_last_schedule', JSON.stringify(editSchedule));
+
+                // Start Notification Countdown (60s)
+                setNotifyStatus('pending');
+                setTimeLeft(60);
+
             } else {
                 if (res.status === 401) {
                     alert('인증 실패: 다시 로그인해주세요.');
@@ -358,69 +423,105 @@ export default function AdminPage() {
                     </div>
                 </div>
 
-                <div className="flex gap-2 w-full md:w-auto">
-                    <button
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="flex-1 md:flex-none bg-blue-500 text-white px-6 py-3 md:py-2 rounded-2xl hover:bg-blue-600 disabled:bg-gray-300 font-medium shadow-md transition-all transform hover:-translate-y-0.5 text-center"
-                    >
-                        {isSaving ? '⏳' : '저장하기'}
-                    </button>
-                    <button onClick={handleLogout} className="flex-1 md:flex-none bg-gray-100 text-gray-600 px-6 py-3 md:py-2 rounded-2xl hover:bg-gray-200 font-medium transition-colors text-center">
-                        로그아웃
-                    </button>
+                <div className="flex flex-col gap-4 w-full md:w-auto">
+                    <div className="flex gap-2 w-full md:w-auto">
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="flex-1 md:flex-none bg-blue-500 text-white px-6 py-3 md:py-2 rounded-2xl hover:bg-blue-600 disabled:bg-gray-300 font-medium shadow-md transition-all transform hover:-translate-y-0.5 text-center"
+                        >
+                            {isSaving ? '⏳' : '저장하기'}
+                        </button>
+                        <button onClick={handleLogout} className="flex-1 md:flex-none bg-gray-100 text-gray-600 px-6 py-3 md:py-2 rounded-2xl hover:bg-gray-200 font-medium transition-colors text-center">
+                            로그아웃
+                        </button>
+                    </div>
+
+                    {/* Member Selector (Moved Here) */}
+                    {role === 'admin' && (
+                        <div className="relative z-20">
+                            <button
+                                onClick={() => setIsMemberMenuOpen(!isMemberMenuOpen)}
+                                className="w-full justify-between bg-white px-4 py-2 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-3 hover:bg-gray-50 transition-colors"
+                            >
+                                {selectedMember ? (
+                                    <img
+                                        src={`/api/proxy/image?url=${encodeURIComponent(selectedMember.avatarUrl)}`}
+                                        alt=""
+                                        className="w-8 h-8 rounded-full bg-gray-100 object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-400">ALL</div>
+                                )}
+                                <span className="font-bold text-gray-700 text-sm">{selectedMember ? selectedMember.name : '전체 멤버'}</span>
+                                <span className="text-gray-400 text-xs">▼</span>
+                            </button>
+
+                            {isMemberMenuOpen && (
+                                <div className="absolute top-full right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden w-48 py-2 z-30">
+                                    <div
+                                        onClick={() => { setFilterMemberId(null); setIsMemberMenuOpen(false); }}
+                                        className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                                    >
+                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-400">ALL</div>
+                                        <span className="font-bold text-gray-700 text-sm">전체 멤버</span>
+                                    </div>
+                                    {editSchedule.characters.map(char => (
+                                        <div
+                                            key={char.id}
+                                            onClick={() => { setFilterMemberId(char.id); setIsMemberMenuOpen(false); }}
+                                            className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 cursor-pointer transition-colors border-t border-gray-50"
+                                        >
+                                            <img
+                                                src={`/api/proxy/image?url=${encodeURIComponent(char.avatarUrl)}`}
+                                                alt=""
+                                                className="w-8 h-8 rounded-full bg-gray-100 object-cover"
+                                            />
+                                            <span className="font-bold text-gray-700 text-sm">{char.name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Notification Status UI */}
+                    {notifyStatus !== 'idle' && (
+                        <div className={`mt-4 w-full md:w-auto px-4 py-3 rounded-xl flex items-center justify-between gap-4 shadow-sm animate-fade-in
+                        ${notifyStatus === 'pending' ? 'bg-yellow-50 border border-yellow-200 text-yellow-800' : ''}
+                        ${notifyStatus === 'sending' ? 'bg-blue-50 border border-blue-200 text-blue-800' : ''}
+                        ${notifyStatus === 'sent' ? 'bg-green-50 border border-green-200 text-green-800' : ''}
+                        ${notifyStatus === 'error' ? 'bg-red-50 border border-red-200 text-red-800' : ''}
+                    `}>
+                            <div className="flex items-center gap-2 text-sm font-bold">
+                                {notifyStatus === 'pending' && <span>⏳ {timeLeft}초 뒤 알림 발송...</span>}
+                                {notifyStatus === 'sending' && <span>🚀 알림 발송 중...</span>}
+                                {notifyStatus === 'sent' && <span>✅ 알림 발송 완료!</span>}
+                                {notifyStatus === 'error' && <span>❌ 알림 발송 실패</span>}
+                            </div>
+
+                            {notifyStatus === 'pending' && (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={cancelNotification}
+                                        className="px-3 py-1 bg-white text-gray-600 text-xs rounded-lg border border-gray-200 hover:bg-gray-50 font-medium transition-colors"
+                                    >
+                                        취소
+                                    </button>
+                                    <button
+                                        onClick={sendNotification}
+                                        className="px-3 py-1 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 font-medium transition-colors shadow-sm"
+                                    >
+                                        즉시 발송
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Member Selector (Admin Only) */}
-            {role === 'admin' && (
-                <div className="w-full max-w-[1200px] mb-4 flex justify-end relative z-10 flex-shrink-0">
-                    <div className="relative">
-                        <button
-                            onClick={() => setIsMemberMenuOpen(!isMemberMenuOpen)}
-                            className="bg-white px-4 py-2 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-3 hover:bg-gray-50 transition-colors"
-                        >
-                            {selectedMember ? (
-                                <img
-                                    src={`/api/proxy/image?url=${encodeURIComponent(selectedMember.avatarUrl)}`}
-                                    alt=""
-                                    className="w-8 h-8 rounded-full bg-gray-100 object-cover"
-                                />
-                            ) : (
-                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-400">ALL</div>
-                            )}
-                            <span className="font-bold text-gray-700 text-sm">{selectedMember ? selectedMember.name : '전체 멤버'}</span>
-                            <span className="text-gray-400 text-xs">▼</span>
-                        </button>
 
-                        {isMemberMenuOpen && (
-                            <div className="absolute top-full right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden w-48 py-2">
-                                <div
-                                    onClick={() => { setFilterMemberId(null); setIsMemberMenuOpen(false); }}
-                                    className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 cursor-pointer transition-colors"
-                                >
-                                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold text-gray-400">ALL</div>
-                                    <span className="font-bold text-gray-700 text-sm">전체 멤버</span>
-                                </div>
-                                {editSchedule.characters.map(char => (
-                                    <div
-                                        key={char.id}
-                                        onClick={() => { setFilterMemberId(char.id); setIsMemberMenuOpen(false); }}
-                                        className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 cursor-pointer transition-colors border-t border-gray-50"
-                                    >
-                                        <img
-                                            src={`/api/proxy/image?url=${encodeURIComponent(char.avatarUrl)}`}
-                                            alt=""
-                                            className="w-8 h-8 rounded-full bg-gray-100 object-cover"
-                                        />
-                                        <span className="font-bold text-gray-700 text-sm">{char.name}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
 
             {/* Mobile Day Navigation - REMOVED */}
             {/* ... */}
@@ -428,13 +529,13 @@ export default function AdminPage() {
             {/* Main Grid Container */}
             <div className="w-full max-w-[1200px] bg-white rounded-[20px] shadow-[0_4px_20px_rgba(255,182,193,0.3)] px-4 pt-4 md:px-6 md:pt-6 pb-0 flex-1 min-h-0 overflow-y-auto">
                 <div
-                    className={`flex flex-col md:grid gap-[10px] min-h-full pb-4 md:pb-6 ${showProfileCol ? 'md:grid-cols-[100px_repeat(7,minmax(120px,1fr))]' : 'md:grid-cols-7'}`}
+                    className={`flex flex-col md:grid content-start gap-[10px] min-h-full pb-4 md:pb-6 ${showProfileCol ? 'md:grid-cols-[100px_repeat(7,minmax(120px,1fr))]' : 'md:grid-cols-7'}`}
                 >
                     {/* Desktop Grid Columns Utility */}
                     <div className="hidden md:contents">
                         {showProfileCol && <div className="rounded-[20px]"></div>}
                         {days.map((day) => (
-                            <div key={day} className="text-center font-bold text-[#888] p-[10px] bg-[#ffebee] rounded-[10px] text-sm flex items-center justify-center">
+                            <div key={day} className="text-center font-bold text-[#888] py-1 bg-[#ffebee] rounded-[10px] text-sm flex items-center justify-center">
                                 {day}
                             </div>
                         ))}
@@ -535,6 +636,6 @@ export default function AdminPage() {
             <p className="mt-8 text-gray-400 text-sm">
                 💡 팁: 내용은 자동으로 줄바꿈됩니다. 휴방으로 설정하면 배경이 하얗게 변합니다.
             </p>
-        </div>
+        </div >
     );
 }

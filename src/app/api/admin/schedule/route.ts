@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { saveScheduleToSheet } from '@/utils/googleSheets';
+import { saveScheduleToSupabase } from '@/utils/supabase';
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET || '0000';
 
@@ -32,12 +32,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const success = await saveScheduleToSheet(body);
+        // Save to Supabase Only (Migration Complete)
+        console.log('Saving to Supabase...');
+        const success = await saveScheduleToSupabase(body);
 
         if (success) {
             return NextResponse.json({ success: true });
         } else {
-            return NextResponse.json({ error: 'Failed to save to Sheets' }, { status: 500 });
+            console.error('Failed to save to Supabase');
+            return NextResponse.json({ error: 'Failed to save to Supabase' }, { status: 500 });
         }
     } catch (error) {
         console.error('Admin save error:', error);

@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getScheduleFromSheet } from '@/utils/googleSheets';
+import { getScheduleFromSupabase } from '@/utils/supabase';
 import { MOCK_SCHEDULE } from '@/data/mockSchedule';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-    // Fetch schedule from Google Sheets
+    // Fetch schedule from Supabase (Source of Truth)
     try {
-        const schedule = await getScheduleFromSheet();
+        const schedule = await getScheduleFromSupabase();
 
         if (schedule) {
             return NextResponse.json(schedule, {
@@ -19,7 +19,7 @@ export async function GET() {
             });
         }
 
-        console.warn('Failed to fetch from Google Sheets, falling back to mock data');
+        console.warn('Failed to fetch from Supabase, falling back to mock data');
         return NextResponse.json(MOCK_SCHEDULE);
     } catch (error) {
         console.error('Schedule fetch error:', error);
