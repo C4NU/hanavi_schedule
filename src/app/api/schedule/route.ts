@@ -4,10 +4,14 @@ import { MOCK_SCHEDULE } from '@/data/mockSchedule';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
+    // Parse query params
+    const { searchParams } = new URL(request.url);
+    const week = searchParams.get('week') || undefined;
+
     // Fetch schedule from Supabase (Source of Truth)
     try {
-        const schedule = await getScheduleFromSupabase();
+        const schedule = await getScheduleFromSupabase(week);
 
         if (schedule) {
             return NextResponse.json(schedule, {

@@ -9,11 +9,13 @@ import InfoModal from './InfoModal';
 interface Props {
     data: WeeklySchedule;
     onExport?: () => void;
+    onPrevWeek?: () => void;
+    onNextWeek?: () => void;
 }
 
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
-const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport }, ref) => {
+const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrevWeek, onNextWeek }, ref) => {
     const [selectedCharacters, setSelectedCharacters] = useState<Set<string>>(
         new Set(data.characters.map(c => c.id))
     );
@@ -94,7 +96,31 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport }, ref)
                     <div className={styles.titleRow}>
                         <div className={styles.titleGroup}>
                             <h1 className={styles.title}>하나비 주간 스케줄표</h1>
-                            <span className={styles.date}>{data.weekRange}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                {onPrevWeek && (
+                                    <button
+                                        onClick={onPrevWeek}
+                                        style={{
+                                            background: 'none', border: '1px solid #ffb6c1', borderRadius: '50%',
+                                            width: '30px', height: '30px', cursor: 'pointer', color: '#ffb6c1',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px'
+                                        }}
+                                        aria-label="Previous Week"
+                                    >◀</button>
+                                )}
+                                <span className={styles.date} style={{ margin: 0 }}>{data.weekRange}</span>
+                                {onNextWeek && (
+                                    <button
+                                        onClick={onNextWeek}
+                                        style={{
+                                            background: 'none', border: '1px solid #ffb6c1', borderRadius: '50%',
+                                            width: '30px', height: '30px', cursor: 'pointer', color: '#ffb6c1',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px'
+                                        }}
+                                        aria-label="Next Week"
+                                    >▶</button>
+                                )}
+                            </div>
                         </div>
                         <div className={styles.controls}>
                             <div className={styles.controlRow}>
@@ -238,7 +264,7 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport }, ref)
                                                         <span className={styles.noBreak}>|･ω･)</span>
                                                     </>
                                                 ) : (
-                                                    item?.content || 'OFF'
+                                                    '휴방'
                                                 )}
                                             </div>}
                                         </div>

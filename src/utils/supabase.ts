@@ -86,28 +86,43 @@ export async function saveScheduleToSupabase(data: WeeklySchedule): Promise<bool
     }
 }
 
-export async function getScheduleFromSupabase(): Promise<WeeklySchedule | null> {
+export async function getScheduleFromSupabase(targetWeekRange?: string): Promise<WeeklySchedule | null> {
     try {
         if (!supabaseUrl || !supabaseServiceKey) return null;
 
-        // 1. Get Active Schedule
-        const { data: scheduleData, error: scheduleError } = await supabase
-            .from('schedules')
-            .select('*')
-            .eq('is_active', true)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
+        let scheduleData = null;
+        let scheduleId = null;
 
-        if (scheduleError || !scheduleData) {
-            console.warn('No active schedule found in Supabase');
-            return null;
+        if (targetWeekRange) {
+            // Fetch Specific Week
+            const { data, error } = await supabase
+                .from('schedules')
+                .select('*')
+                .eq('week_range', targetWeekRange)
+                .single();
+
+            if (data) {
+                scheduleData = data;
+                scheduleId = data.id;
+            }
+        } else {
+            // Fetch Latest Active
+            const { data, error } = await supabase
+                .from('schedules')
+                .select('*')
+                .eq('is_active', true)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+            if (data) {
+                scheduleData = data;
+                scheduleId = data.id;
+            }
         }
 
-        const weekRange = scheduleData.week_range;
-        const scheduleId = scheduleData.id;
+        const effectiveWeekRange = scheduleData?.week_range || targetWeekRange || '';
 
-        // 2. Get All Characters (to ensure we return all even if no schedule)
+        // 2. Get All Characters (Always needed to construct template)
         const { data: charactersData, error: charError } = await supabase
             .from('characters')
             .select('*');
@@ -117,15 +132,17 @@ export async function getScheduleFromSupabase(): Promise<WeeklySchedule | null> 
             return null;
         }
 
-        // 3. Get Schedule Items
-        const { data: itemsData, error: itemsError } = await supabase
-            .from('schedule_items')
-            .select('*')
-            .eq('schedule_id', scheduleId);
+        // 3. Get Items (IF a schedule exists)
+        let itemsData: any[] = [];
+        if (scheduleId) {
+            const { data, error: itemsError } = await supabase
+                .from('schedule_items')
+                .select('*')
+                .eq('schedule_id', scheduleId);
 
-        if (itemsError) {
-            console.error('Error fetching schedule items:', itemsError);
-            return null;
+            if (!itemsError && data) {
+                itemsData = data;
+            }
         }
 
         // 4. Transform to WeeklySchedule
@@ -133,16 +150,31 @@ export async function getScheduleFromSupabase(): Promise<WeeklySchedule | null> 
             const charId = char.id;
             const charItems = itemsData?.filter((item: any) => item.character_id === charId) || [];
 
-            const scheduleObj: { [key: string]: ScheduleItem } = {
-                MON: { time: '', content: '휴방', type: 'off' },
-                TUE: { time: '', content: '휴방', type: 'off' },
-                WED: { time: '', content: '휴방', type: 'off' },
-                THU: { time: '', content: '휴방', type: 'off' },
-                FRI: { time: '', content: '휴방', type: 'off' },
-                SAT: { time: '', content: '휴방', type: 'off' },
-                SUN: { time: '', content: '휴방', type: 'off' },
+            // Define Defaults
+            const DEFAULTS: Record<string, { time: string, off: string[] }> = {
+                'varessa': { time: '08:00', off: ['THU', 'SUN'] },
+                'nemu': { time: '12:00', off: ['MON', 'THU'] },
+                'maroka': { time: '14:00', off: ['TUE', 'SAT'] },
+                'mirai': { time: '15:00', off: ['MON', 'THU'] },
+                'ruvi': { time: '19:00', off: ['WED', 'SUN'] },
+                'iriya': { time: '24:00', off: ['TUE', 'SAT'] }
             };
 
+            const scheduleObj: { [key: string]: ScheduleItem } = {};
+            const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
+            days.forEach(day => {
+                const config = DEFAULTS[charId.toLowerCase()] || { time: '00:00', off: [] };
+                const isDefaultOff = config.off.includes(day);
+
+                scheduleObj[day] = {
+                    time: isDefaultOff ? '' : config.time,
+                    content: isDefaultOff ? '휴방' : '',
+                    type: isDefaultOff ? 'off' : 'stream'
+                };
+            });
+
+            // Overwrite with actual items from DB if they exist
             charItems.forEach((item: any) => {
                 if (item.day) {
                     scheduleObj[item.day] = {
@@ -156,7 +188,7 @@ export async function getScheduleFromSupabase(): Promise<WeeklySchedule | null> 
             return {
                 id: char.id,
                 name: char.name,
-                colorTheme: char.color_theme,
+                colorTheme: char.color_theme || char.id, // Fallback to ID if theme missing
                 avatarUrl: char.avatar_url,
                 chzzkUrl: char.chzzk_url,
                 schedule: scheduleObj
@@ -169,7 +201,7 @@ export async function getScheduleFromSupabase(): Promise<WeeklySchedule | null> 
         characters.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
 
         return {
-            weekRange,
+            weekRange: effectiveWeekRange,
             characters
         };
 

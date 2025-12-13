@@ -1,13 +1,53 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import ScheduleGrid from '@/components/ScheduleGrid';
 import { useSchedule } from "@/hooks/useSchedule";
 import html2canvas from "html2canvas";
 
 export default function Home() {
-  const { schedule } = useSchedule();
+  // Navigation State
+  const getInitialMonday = () => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    return d;
+  };
+
+  const [currentDate, setCurrentDate] = useState<Date>(getInitialMonday());
+
+  const getWeekRangeString = (monday: Date) => {
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const sM = (monday.getMonth() + 1).toString().padStart(2, '0');
+    const sD = monday.getDate().toString().padStart(2, '0');
+    const eM = (sunday.getMonth() + 1).toString().padStart(2, '0');
+    const eD = sunday.getDate().toString().padStart(2, '0');
+
+    return `${sM}.${sD} - ${eM}.${eD}`;
+  };
+
+  const weekRangeString = getWeekRangeString(currentDate);
+  const { schedule } = useSchedule(weekRangeString);
   const scheduleRef = useRef<HTMLDivElement>(null);
+
+  const handlePrevWeek = () => {
+    setCurrentDate(prev => {
+      const next = new Date(prev);
+      next.setDate(prev.getDate() - 7);
+      return next;
+    });
+  };
+
+  const handleNextWeek = () => {
+    setCurrentDate(prev => {
+      const next = new Date(prev);
+      next.setDate(prev.getDate() + 7);
+      return next;
+    });
+  };
 
   const handleExport = async () => {
     if (!scheduleRef.current) return;
@@ -88,7 +128,13 @@ export default function Home() {
 
   return (
     <main className="main-layout">
-      <ScheduleGrid ref={scheduleRef} data={schedule} onExport={handleExport} />
+      <ScheduleGrid
+        ref={scheduleRef}
+        data={schedule}
+        onExport={handleExport}
+        onPrevWeek={handlePrevWeek}
+        onNextWeek={handleNextWeek}
+      />
     </main>
   );
 }

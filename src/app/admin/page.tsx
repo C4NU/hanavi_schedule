@@ -14,10 +14,17 @@ export default function AdminPage() {
     const [isSaving, setIsSaving] = useState(false);
 
     // New states for date picker
-    const [startMonth, setStartMonth] = useState('1');
-    const [startDay, setStartDay] = useState('1');
-    const [endMonth, setEndMonth] = useState('1');
-    const [endDay, setEndDay] = useState('1');
+    // Navigation State: Start with current week's Monday
+    // Calculate current Monday:
+    const getInitialMonday = () => {
+        const d = new Date();
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+        d.setDate(diff);
+        return d;
+    };
+
+    const [currentDate, setCurrentDate] = useState<Date>(getInitialMonday());
 
     // Member Filter State for Admin
     const [filterMemberId, setFilterMemberId] = useState<string | null>(null);
@@ -31,38 +38,25 @@ export default function AdminPage() {
     //     setCurrentDayIndex((today + 6) % 7);
     // }, []);
 
-    // Helper: Get Current Week Monday & Sunday
-    const getCurrentWeek = () => {
-        const curr = new Date();
-        const first = curr.getDate() - curr.getDay() + 1; // Monday
-        const last = first + 6; // Sunday
+    // Helpers
+    const getWeekRangeString = (monday: Date) => {
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
 
-        const monday = new Date(curr.setDate(first));
-        const sunday = new Date(curr.setDate(last));
+        const sM = (monday.getMonth() + 1).toString().padStart(2, '0');
+        const sD = monday.getDate().toString().padStart(2, '0');
+        const eM = (sunday.getMonth() + 1).toString().padStart(2, '0');
+        const eD = sunday.getDate().toString().padStart(2, '0');
 
-        return {
-            sM: (monday.getMonth() + 1).toString(),
-            sD: monday.getDate().toString(),
-            eM: (sunday.getMonth() + 1).toString(),
-            eD: sunday.getDate().toString()
-        };
+        return `${sM}.${sD} - ${eM}.${eD}`;
     };
 
-    // Helper: Parse existing range string "12.09 - 12.15"
-    const parseWeekRange = (range: string) => {
-        try {
-            const [start, end] = range.split(' - ');
-            const [sM, sD] = start.split('.');
-            const [eM, eD] = end.split('.');
-            return {
-                sM: parseInt(sM).toString(),
-                sD: parseInt(sD).toString(),
-                eM: parseInt(eM).toString(),
-                eD: parseInt(eD).toString()
-            };
-        } catch (e) {
-            return null;
-        }
+    const navigateWeek = (direction: -1 | 1) => {
+        setCurrentDate(prev => {
+            const next = new Date(prev);
+            next.setDate(prev.getDate() + (direction * 7));
+            return next;
+        });
     };
 
     useEffect(() => {
@@ -78,34 +72,27 @@ export default function AdminPage() {
     }, []);
 
     // Initialize Date and editSchedule
+    // Fetch Schedule When Date Changes
     useEffect(() => {
-        if (initialSchedule) {
-            // First, deep copy
-            const cloned = JSON.parse(JSON.stringify(initialSchedule));
-            setEditSchedule(cloned);
+        const fetchSchedule = async () => {
+            const rangeString = getWeekRangeString(currentDate);
+            console.log('Fetching schedule for:', rangeString);
 
-            // Always set to Current Week (User Requirement: Auto-set on entry)
-            // We ignore the loaded schedule's date range for initialization, 
-            // effectively preparing "This Week" with the loaded content.
-            const dateState = getCurrentWeek();
-
-            setStartMonth(dateState.sM);
-            setStartDay(dateState.sD);
-            setEndMonth(dateState.eM);
-            setEndDay(dateState.eD);
-        }
-    }, [initialSchedule]);
-
-    // Update weekRange string when date parts change
-    useEffect(() => {
-        if (editSchedule) {
-            const newRange = `${startMonth.padStart(2, '0')}.${startDay.padStart(2, '0')} - ${endMonth.padStart(2, '0')}.${endDay.padStart(2, '0')}`;
-            // Avoid infinite loop if no change
-            if (editSchedule.weekRange !== newRange) {
-                setEditSchedule(prev => prev ? ({ ...prev, weekRange: newRange }) : null);
+            try {
+                const res = await fetch(`/api/schedule?week=${encodeURIComponent(rangeString)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setEditSchedule(data); // This data will have defaults if new
+                } else {
+                    console.error('Failed to fetch schedule');
+                }
+            } catch (e) {
+                console.error('Error fetching schedule:', e);
             }
-        }
-    }, [startMonth, startDay, endMonth, endDay, editSchedule]); // depend on parts and editSchedule to prevent stale closure
+        };
+
+        fetchSchedule();
+    }, [currentDate]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -296,8 +283,6 @@ export default function AdminPage() {
     if (!editSchedule) return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500 font-bold animate-pulse">스케줄 로딩중...</div>;
 
     const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-    const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString());
-    const dates = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
 
     // Filter characters if role is not admin
     const visibleCharacters = editSchedule.characters.filter(char => {
@@ -394,22 +379,22 @@ export default function AdminPage() {
                     <div className="flex flex-col items-center md:items-start gap-1">
                         <h1 className="text-sm font-bold text-gray-400">날짜 설정</h1>
                         {role === 'admin' || role ? (
-                            <div className="flex items-center gap-1 text-sm bg-gray-50 px-3 py-2 rounded-xl border border-gray-200">
-                                <select value={startMonth} onChange={e => setStartMonth(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none text-right appearance-none cursor-pointer hover:text-pink-500">
-                                    {months.map(m => <option key={m} value={m}>{m}</option>)}
-                                </select>
-                                <span className="text-gray-400">.</span>
-                                <select value={startDay} onChange={e => setStartDay(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none appearance-none cursor-pointer hover:text-pink-500">
-                                    {dates.map(d => <option key={d} value={d}>{d}</option>)}
-                                </select>
-                                <span className="mx-2 text-gray-300">~</span>
-                                <select value={endMonth} onChange={e => setEndMonth(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none text-right appearance-none cursor-pointer hover:text-pink-500">
-                                    {months.map(m => <option key={m} value={m}>{m}</option>)}
-                                </select>
-                                <span className="text-gray-400">.</span>
-                                <select value={endDay} onChange={e => setEndDay(e.target.value)} className="bg-transparent font-bold text-gray-700 outline-none appearance-none cursor-pointer hover:text-pink-500">
-                                    {dates.map(d => <option key={d} value={d}>{d}</option>)}
-                                </select>
+                            <div className="flex items-center gap-3 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200">
+                                <button
+                                    onClick={() => navigateWeek(-1)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-200 text-gray-400 hover:text-pink-500 hover:border-pink-200 transition-colors shadow-sm"
+                                >
+                                    ◀
+                                </button>
+                                <span className="font-bold text-gray-700 w-[140px] text-center select-none">
+                                    {getWeekRangeString(currentDate)}
+                                </span>
+                                <button
+                                    onClick={() => navigateWeek(1)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-gray-200 text-gray-400 hover:text-pink-500 hover:border-pink-200 transition-colors shadow-sm"
+                                >
+                                    ▶
+                                </button>
                             </div>
                         ) : (
                             <span className="text-xs text-gray-300">오늘도 화이팅! 🍀</span>

@@ -8,8 +8,9 @@ const fetcher = (url: string) => fetch(url).then((res) => {
     return res.json();
 });
 
-export function useSchedule() {
-    const { data, error, isLoading } = useSWR<WeeklySchedule>('/api/schedule', fetcher, {
+export function useSchedule(weekRange?: string) {
+    const key = weekRange ? `/api/schedule?week=${encodeURIComponent(weekRange)}` : '/api/schedule';
+    const { data, error, isLoading } = useSWR<WeeklySchedule>(key, fetcher, {
         refreshInterval: 60000,
         revalidateOnFocus: true,
         dedupingInterval: 5000,

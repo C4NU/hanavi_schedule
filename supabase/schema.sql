@@ -4,7 +4,7 @@ create extension if not exists "uuid-ossp";
 -- Table for tracking weekly schedules
 create table public.schedules (
     id uuid not null default uuid_generate_v4(),
-    week_range text not null, -- e.g., "12.09 - 12.15"
+    week_range text not null unique, -- e.g., "12.09 - 12.15"
     is_active boolean default true,
     created_at timestamp with time zone default now(),
     updated_at timestamp with time zone default now(),
