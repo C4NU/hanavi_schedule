@@ -109,10 +109,10 @@ create policy "Admin Write Items" on public.schedule_items for all using ( publi
 
 -- 7. Seed Initial Data (Characters) - Idempotent
 insert into public.characters (id, name, color_theme, avatar_url, chzzk_url) values
-('varessa', '바레사', 'varessa', '/avatars/varessa.png', 'https://chzzk.naver.com/cb40b98631410d4cc3796ab279c2f1bc'),
-('nemu', '네무', 'nemu', '/avatars/nemu.png', 'https://chzzk.naver.com/7c4c49fd3a34ce68e84075f5b44fe8c8'),
-('maroka', '마로카', 'maroka', '/avatars/maroka.png', 'https://chzzk.naver.com/157501b80c3c4416110996887550f75f'),
-('mirai', '미라이', 'mirai', '/avatars/mirai.png', 'https://chzzk.naver.com/37716364b3086fefd298046072c92345'),
-('ruvi', '루비', 'ruvi', '/avatars/ruvi.png', 'https://chzzk.naver.com/acc87c975763452aab25e281e0eb0b85'),
-('iriya', '이리야', 'iriya', '/avatars/iriya.png', 'https://chzzk.naver.com/10d1ce368f685df0502875195eee39eb')
+('varessa', '바레사', 'varessa', 'https://nng-phinf.pstatic.net/MjAyNTExMTZfMjE3/MDAxNzYzMjkwMTA1MzE4.htaiKHdkh_GRwP1QaboXgCKwq2jyT_iEFGSqhlIjEMAg.v4spxDjEzoy18q7Q9Y7d8xx8V414XOUkrKZCZy795Zcg.PNG/image.png?type=f120_120_na', 'https://chzzk.naver.com/cb40b98631410d4cc3796ab279c2f1bc'),
+('nemu', '네무', 'nemu', 'https://nng-phinf.pstatic.net/MjAyNTAzMTFfMjQ4/MDAxNzQxNjM3MjgzOTg3.i_jLYFHlvMPRcXdc-33jJnZ7Uq_pMR-X1Q05QCxqlCgg.jIvgSv_hOaU3RDap2dN78plBmCEQPeNoh79SjpGhT-wg.JPEG/%EB%84%A4%EB%AC%B4%ED%94%84%EC%82%AC.jpg?type=f120_120_na', 'https://chzzk.naver.com/7c4c49fd3a34ce68e84075f5b44fe8c8'),
+('maroka', '마로카', 'maroka', 'https://nng-phinf.pstatic.net/MjAyNTExMTZfMTcg/MDAxNzYzMjkwNzUwNDQ3.6PyGF3UHwgIRtO7bgz3KKo1YjUkv2AwtHdVm3iIp9fsg.nK8jD3R8Q3NNIWbBSLWu_C6T0tPgh7lFdik2i6kCZ90g.PNG/image.png?type=f120_120_na', 'https://chzzk.naver.com/157501b80c3c4416110996887550f75f'),
+('mirai', '미라이', 'mirai', 'https://nng-phinf.pstatic.net/MjAyNTAyMTRfMjE2/MDAxNzM5NTQ0ODEyMjE1.rsVyBQD-4lpbSvEKUA4KQRGlkB8rb74cvF8rXl7t9WEg.a9X56KykaLdhSW5Qq61bx9vORGVI4S0UwnwAApLiqtIg.JPEG/%EB%AF%B8%EB%9D%BC%EC%9D%B4_%ED%94%84%EC%82%AC.jpg?type=f120_120_na', 'https://chzzk.naver.com/37716364b3086fefd298046072c92345'),
+('ruvi', '루비', 'ruvi', 'https://nng-phinf.pstatic.net/MjAyNTAyMTNfMTQy/MDAxNzM5NDMyNzExNzg0.0sp4WeVOS5mUGgczmdY_h37nsFPCcY5UljoyZk_QNAMg.UVP0e9fo6FD9I7wZSS4t7pw-VdrtaQl-atR1_Ccc9y8g.JPEG/%EC%B1%84%EB%84%90%ED%94%84%EC%82%AC.jpg?type=f120_120_na', 'https://chzzk.naver.com/acc87c975763452aab25e281e0eb0b85'),
+('iriya', '이리야', 'iriya', 'https://nng-phinf.pstatic.net/MjAyNTExMTZfMjE3/MDAxNzYzMjkwMTA1MzE4.htaiKHdkh_GRwP1QaboXgCKwq2jyT_iEFGSqhlIjEMAg.v4spxDjEzoy18q7Q9Y7d8xx8V414XOUkrKZCZy795Zcg.PNG/image.png?type=f120_120_na', 'https://chzzk.naver.com/10d1ce368f685df0502875195eee39eb')
 on conflict (id) do nothing;
