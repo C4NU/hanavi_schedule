@@ -7,6 +7,19 @@ interface InfoModalProps {
 }
 
 const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
+    const [email, setEmail] = React.useState('canu1832@gmail.com');
+
+    React.useEffect(() => {
+        if (isOpen) {
+            fetch('/api/settings')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.email) setEmail(data.email);
+                })
+                .catch(err => console.error('Failed to load settings:', err));
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     return (
@@ -52,7 +65,7 @@ const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
                         <h3>문의사항 📧</h3>
                         <p>
                             버그 제보나 건의사항은 아래 이메일로 보내주세요.<br />
-                            <a href="mailto:canu1832@gmail.com">canu1832@gmail.com</a>
+                            <a href={`mailto:${email}`}>{email}</a>
                         </p>
                     </section>
                 </div>

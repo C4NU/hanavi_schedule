@@ -119,7 +119,11 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrev
                                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px'
                                         }}
                                         aria-label="Previous Week"
-                                    >◀</button>
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M15 18l-6-6 6-6" />
+                                        </svg>
+                                    </button>
                                 )}
                                 <span className={styles.date} style={{ margin: 0 }}>{data.weekRange}</span>
                                 {onNextWeek && (
@@ -131,7 +135,11 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrev
                                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px'
                                         }}
                                         aria-label="Next Week"
-                                    >▶</button>
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M9 18l6-6-6-6" />
+                                        </svg>
+                                    </button>
                                 )}
                             </div>
                         </div>

@@ -126,6 +126,18 @@ export default function AdminPage() {
         fetchSchedule();
     }, [currentDate]);
 
+    // Fetch Global Settings (Email)
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetch('/api/settings')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.email) setInquiryEmail(data.email);
+                })
+                .catch(console.error);
+        }
+    }, [isAuthenticated]);
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
@@ -155,6 +167,11 @@ export default function AdminPage() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordStatus, setPasswordStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+    // Email Change State
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+    const [inquiryEmail, setInquiryEmail] = useState('');
+    const [emailStatus, setEmailStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
     const handlePasswordChange = async () => {
         if (!newPassword || !confirmPassword) {
@@ -186,6 +203,38 @@ export default function AdminPage() {
             console.error(e);
             alert('비밀번호 변경 실패: ' + e.message);
             setPasswordStatus('error');
+        }
+    };
+
+    const handleEmailUpdate = async () => {
+        if (!inquiryEmail) return alert('이메일을 입력해주세요.');
+
+        setEmailStatus('loading');
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch('/api/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify({ email: inquiryEmail })
+            });
+
+            if (res.ok) {
+                setEmailStatus('success');
+                setTimeout(() => {
+                    setIsEmailModalOpen(false);
+                    setEmailStatus('idle');
+                }, 1500);
+            } else {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Failed to update email');
+            }
+        } catch (e: any) {
+            console.error(e);
+            setEmailStatus('error');
+            alert('이메일 변경 실패: ' + e.message);
         }
     };
 
@@ -586,6 +635,12 @@ export default function AdminPage() {
                                                 >
                                                     🔒 비밀번호 변경
                                                 </button>
+                                                <button
+                                                    onClick={() => { setIsEmailModalOpen(true); setIsProfileMenuOpen(false); }}
+                                                    className="w-full text-left px-4 py-2 hover:bg-gray-50 text-gray-700 font-bold text-sm transition-colors flex items-center gap-2"
+                                                >
+                                                    📧 이메일 변경
+                                                </button>
                                             </div>
                                         )}
                                     </div>
@@ -705,6 +760,46 @@ export default function AdminPage() {
                                 className="flex-1 py-3 bg-pink-500 text-white rounded-xl font-bold hover:bg-pink-600 transition-colors shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
                             >
                                 {passwordStatus === 'loading' ? '변경 중...' : '변경하기'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Email Change Modal */}
+            {isEmailModalOpen && (
+                <div className="fixed inset-0 z-[100] bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full border-2 border-pink-200">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <span>📧</span> 문의 이메일 변경
+                        </h3>
+
+                        <div className="flex flex-col gap-3">
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 mb-1 block">이메일 주소</label>
+                                <input
+                                    type="email"
+                                    value={inquiryEmail}
+                                    onChange={(e) => setInquiryEmail(e.target.value)}
+                                    className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all font-mono text-sm"
+                                    placeholder="example@gmail.com"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2 mt-6">
+                            <button
+                                onClick={() => { setIsEmailModalOpen(false); setEmailStatus('idle'); }}
+                                className="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                            >
+                                취소
+                            </button>
+                            <button
+                                onClick={handleEmailUpdate}
+                                disabled={emailStatus === 'loading'}
+                                className="flex-1 py-3 bg-pink-500 text-white rounded-xl font-bold hover:bg-pink-600 transition-colors shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {emailStatus === 'loading' ? '저장 중...' : '저장하기'}
                             </button>
                         </div>
                     </div>
