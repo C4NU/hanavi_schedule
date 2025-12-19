@@ -7,16 +7,19 @@ interface InfoModalProps {
 }
 
 const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
-    const [email, setEmail] = React.useState('canu1832@gmail.com');
+    const [email, setEmail] = React.useState('');
+    const [isLoading, setIsLoading] = React.useState(false);
 
     React.useEffect(() => {
         if (isOpen) {
+            setIsLoading(true);
             fetch('/api/settings')
                 .then(res => res.json())
                 .then(data => {
                     if (data.email) setEmail(data.email);
                 })
-                .catch(err => console.error('Failed to load settings:', err));
+                .catch(err => console.error('Failed to load settings:', err))
+                .finally(() => setIsLoading(false));
         }
     }, [isOpen]);
 
@@ -65,7 +68,11 @@ const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose }) => {
                         <h3>문의사항 📧</h3>
                         <p>
                             버그 제보나 건의사항은 아래 이메일로 보내주세요.<br />
-                            <a href={`mailto:${email}`}>{email}</a>
+                            {isLoading ? (
+                                <span className="text-gray-400">불러오는 중...</span>
+                            ) : (
+                                <a href={`mailto:${email}`}>{email || '이메일 정보 없음'}</a>
+                            )}
                         </p>
                     </section>
                 </div>
