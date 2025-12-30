@@ -5,6 +5,7 @@ import styles from './ScheduleGrid.module.css';
 import { WeeklySchedule, ScheduleItem } from '@/types/schedule';
 import { generateICS } from '@/utils/ics';
 import InfoModal from './InfoModal';
+import MarkdownEditor from './MarkdownEditor';
 
 interface Props {
     data: WeeklySchedule;
@@ -76,6 +77,7 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrev
         }
         setSelectedCharacters(newSelected);
     };
+
 
     const handleSelectAll = () => {
         setSelectedCharacters(new Set(data.characters.map(c => c.id)));
@@ -314,10 +316,10 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrev
                                                         onBlur={(e) => onCellBlur?.(char.id, day, 'time', e.target.value)}
                                                         placeholder="시간"
                                                     />
-                                                    <textarea
+                                                    <MarkdownEditor
                                                         className={styles.editTextArea}
                                                         value={item?.content || ''}
-                                                        onChange={(e) => onCellUpdate?.(char.id, day, 'content', e.target.value)}
+                                                        onChange={(val) => onCellUpdate?.(char.id, day, 'content', val)}
                                                         placeholder="컨텐츠"
                                                     />
                                                     <select
@@ -346,7 +348,14 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrev
                                                                         <span className={styles.noBreak}>|･ω･)</span>
                                                                     </>
                                                                 ) : (
-                                                                    item.content
+                                                                    <div
+                                                                        className={`
+                                                                            ${item.content.length > 50 ? styles.textSizeS : ''}
+                                                                            ${item.content.length > 80 ? styles.textSizeXS : ''}
+                                                                            ${item.content.length > 120 ? styles.textSizeXXS : ''}
+                                                                        `}
+                                                                        dangerouslySetInnerHTML={{ __html: item.content }}
+                                                                    />
                                                                 )}
                                                             </div>
                                                         </>
@@ -371,6 +380,7 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrev
                     </div>
                 </div >
             </div >
+
             <InfoModal isOpen={infoModalOpen} onClose={() => setInfoModalOpen(false)} />
         </div >
     );
