@@ -376,10 +376,12 @@
     position: relative;
     overflow: hidden;
     /* Clip contents */
-    width: 65px;
-    /* Fixed width matching previous grid col ~80-100 but adjusted for squares */
-    height: 90px;
-    /* Slightly taller aspect ratio */
+    width: 100%;
+    /* Fill the grid column (100px) */
+    height: 100%;
+    /* Fill the row height */
+    min-height: 90px;
+    /* Maintain minimum aspect ratio */
     background-size: cover;
     background-position: center;
     background-color: #f0f0f0;
