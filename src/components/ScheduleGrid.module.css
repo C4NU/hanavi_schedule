@@ -1158,6 +1158,8 @@
     resize: none;
     /* flex-grow: 1; Removed to prevent stretching */
     min-height: 32px;
+    max-height: 80px;
+    overflow-y: auto;
     line-height: 1.4;
 }
 
@@ -1233,4 +1235,44 @@
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+.editTimeRow {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.editLinkBtn {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid #ccc;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #666;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    margin-left: 4px;
+}
+
+.editLinkBtn:hover {
+    background: #f0f0f0;
+    color: #FF0000;
+    border-color: #FF0000;
+}
+
+.editLinkBtn.hasLink {
+    color: #FF0000;
+    border-color: #FF0000;
+    background: #fff0f0;
+}
+
+.hasLink {
+    cursor: pointer;
 }

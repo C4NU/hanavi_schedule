@@ -6,6 +6,7 @@ import { WeeklySchedule, ScheduleItem } from '@/types/schedule';
 import { generateICS } from '@/utils/ics';
 import InfoModal from './InfoModal';
 import MarkdownEditor from './MarkdownEditor';
+import YouTubeLinkModal from './YouTubeLinkModal';
 
 interface Props {
     data: WeeklySchedule;
@@ -30,6 +31,8 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrev
     const [touchStart, setTouchStart] = useState<number | null>(null);
     const [touchEnd, setTouchEnd] = useState<number | null>(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
+    const [currentEditCell, setCurrentEditCell] = useState<{ charId: string, day: string, url: string } | null>(null);
 
     // Set initial day to current day of week on mount (Client-side only to avoid hydration mismatch)
     React.useEffect(() => {
@@ -85,6 +88,17 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrev
 
     const handleDeselectAll = () => {
         setSelectedCharacters(new Set());
+    };
+
+    const handleOpenLinkModal = (charId: string, day: string, currentUrl: string) => {
+        setCurrentEditCell({ charId, day, url: currentUrl });
+        setYoutubeModalOpen(true);
+    };
+
+    const handleSaveLink = (url: string) => {
+        if (currentEditCell) {
+            onCellUpdate?.(currentEditCell.charId, currentEditCell.day, 'videoUrl', url);
+        }
     };
 
     const handleDownloadCalendar = () => {
@@ -259,8 +273,8 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrev
                                     className={`${styles.charCell} ${styles[char.colorTheme]}`}
                                     style={char.avatarUrl ? {
                                         backgroundImage: `url(${char.avatarUrl.startsWith('http')
-                                                ? `/api/proxy/image?url=${encodeURIComponent(char.avatarUrl)}`
-                                                : char.avatarUrl
+                                            ? `/api/proxy/image?url=${encodeURIComponent(char.avatarUrl)}`
+                                            : char.avatarUrl
                                             })`
                                     } : {}}
                                 >
@@ -303,18 +317,40 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrev
                                                 ${styles[char.colorTheme]}
                                                 ${isOff ? styles.off : ''}
                                                 ${specialClass}
+                                                ${item?.videoUrl && !isEditable ? styles.hasLink : ''}
                                             `}
+                                            onClick={(e) => {
+                                                // Prevent click if it might be a swipe (basic check)
+                                                // The swipe logic uses touch events on the parent.
+                                                // If touchEnd is populated and distance is large, it's a swipe.
+                                                // However, touchEnd might be null on simple tap.
+                                                const isSwipe = touchStart && touchEnd && Math.abs(touchStart - touchEnd) > minSwipeDistance;
+                                                if (!isSwipe && item?.videoUrl && !isEditable) {
+                                                    // Stop propagation to prevent grid swipes if needed, mainly for UX
+                                                    // e.stopPropagation(); 
+                                                    window.open(item.videoUrl, '_blank');
+                                                }
+                                            }}
                                         >
                                             {isEditable ? (
                                                 // EDIT MODE
                                                 <>
-                                                    <input
-                                                        className={styles.editInput}
-                                                        value={item?.time || ''}
-                                                        onChange={(e) => onCellUpdate?.(char.id, day, 'time', e.target.value)}
-                                                        onBlur={(e) => onCellBlur?.(char.id, day, 'time', e.target.value)}
-                                                        placeholder="시간"
-                                                    />
+                                                    <div className={styles.editTimeRow}>
+                                                        <input
+                                                            className={styles.editInput}
+                                                            value={item?.time || ''}
+                                                            onChange={(e) => onCellUpdate?.(char.id, day, 'time', e.target.value)}
+                                                            onBlur={(e) => onCellBlur?.(char.id, day, 'time', e.target.value)}
+                                                            placeholder="시간"
+                                                        />
+                                                        <button
+                                                            className={`${styles.editLinkBtn} ${item?.videoUrl ? styles.hasLink : ''}`}
+                                                            onClick={() => handleOpenLinkModal(char.id, day, item?.videoUrl || '')}
+                                                            title="YouTube 링크 연결"
+                                                        >
+                                                            {item?.videoUrl ? 'YT' : '🔗'}
+                                                        </button>
+                                                    </div>
                                                     <MarkdownEditor
                                                         className={styles.editTextArea}
                                                         value={item?.content || ''}
@@ -381,6 +417,12 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrev
             </div >
 
             <InfoModal isOpen={infoModalOpen} onClose={() => setInfoModalOpen(false)} />
+            <YouTubeLinkModal
+                isOpen={youtubeModalOpen}
+                onClose={() => setYoutubeModalOpen(false)}
+                initialUrl={currentEditCell?.url}
+                onSave={handleSaveLink}
+            />
         </div >
     );
 });

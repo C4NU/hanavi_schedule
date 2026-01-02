@@ -14,6 +14,7 @@ export default function AdminPage() {
     // const { schedule: initialSchedule } = useSchedule(); // This hook is no longer used
     const [editSchedule, setEditSchedule] = useState<WeeklySchedule | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [session, setSession] = useState<any>(null);
 
     // New states for date picker
     // Navigation State: Start with current week's Monday
@@ -67,6 +68,7 @@ export default function AdminPage() {
         const checkSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (session) {
+                setSession(session);
                 const success = await fetchUserRole(session.user.id);
                 if (success) setIsAuthenticated(true);
             }
@@ -74,6 +76,7 @@ export default function AdminPage() {
         checkSession();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            setSession(session);
             if (session) {
                 const success = await fetchUserRole(session.user.id);
                 if (success) setIsAuthenticated(true);
@@ -111,7 +114,11 @@ export default function AdminPage() {
             console.log('Fetching schedule for:', rangeString);
 
             try {
-                const res = await fetch(`/api/schedule?week=${encodeURIComponent(rangeString)}`);
+                // Add timestamp to prevent browser caching
+                const res = await fetch(`/api/schedule?week=${encodeURIComponent(rangeString)}&t=${Date.now()}`, {
+                    cache: 'no-store',
+                    headers: { 'Pragma': 'no-cache', 'Cache-Control': 'no-cache' }
+                });
                 if (res.ok) {
                     const data = await res.json();
                     setEditSchedule(data); // This data will have defaults if new
@@ -307,48 +314,70 @@ export default function AdminPage() {
 
     const handleSave = async () => {
         if (!editSchedule) return;
+        console.log('[Debug] Save started');
+
         setIsSaving(true);
         // Cancel any pending notification on new save
         if (notifyStatus === 'pending') cancelNotification();
 
         // Get current session token
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log('[Debug] Using cached session...');
 
         if (!session) {
+            console.warn('[Debug] No cached session found');
             alert('세션이 만료되었습니다. 다시 로그인해주세요.');
             handleLogout();
             setIsSaving(false);
             return;
         }
 
+        // Setup Timeout (e.g. 15 seconds)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         try {
+            console.log('[Debug] Sending request to /api/admin/schedule...');
             const res = await fetch('/api/admin/schedule', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${session.access_token}`
                 },
-                body: JSON.stringify(editSchedule)
+                body: JSON.stringify(editSchedule),
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
+
+            console.log('[Debug] Response status:', res.status);
 
             if (res.ok) {
+                console.log('[Debug] Save success');
                 localStorage.setItem('hanavi_last_schedule', JSON.stringify(editSchedule));
                 setNotifyStatus('pending');
                 setTimeLeft(60);
                 setIsModalVisible(true);
             } else {
+                const errText = await res.text();
+                console.error('[Debug] Save failed:', res.status, errText);
+
                 if (res.status === 401) {
                     alert('인증 실패: 다시 로그인해주세요.');
                     setIsAuthenticated(false);
                     sessionStorage.clear();
                 } else {
-                    alert('저장 실패: 서버 오류');
+                    alert(`저장 실패: 서버 오류 (${res.status})`);
                 }
             }
-        } catch (e) {
-            alert('에러 발생: ' + e);
+        } catch (e: any) {
+            console.error('[Debug] Exception during save:', e);
+            if (e.name === 'AbortError') {
+                alert('저장 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
+            } else {
+                alert('에러 발생: ' + e);
+            }
         } finally {
             setIsSaving(false);
+            clearTimeout(timeoutId);
         }
     };
 

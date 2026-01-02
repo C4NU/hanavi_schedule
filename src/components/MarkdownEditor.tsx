@@ -16,13 +16,14 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange, onBlur
     // Toolbar State
     const [toolbar, setToolbar] = useState<{ visible: boolean; top: number; left: number } | null>(null);
 
-    // Initialize content
+    // Sync content when value prop changes (e.g., navigation)
     useEffect(() => {
-        if (editorRef.current && editorRef.current.innerHTML === '') {
-            // Direct HTML usage
+        if (editorRef.current && editorRef.current.innerHTML !== value) {
+            // Only update if content is different to avoid cursor reset issues during typing
+            // (Though typically typing updates local DOM first, then prop comes back matching)
             editorRef.current.innerHTML = value;
         }
-    }, []); // Only mount
+    }, [value]);
 
     // Handle Selection for Toolbar
     useEffect(() => {

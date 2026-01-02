@@ -56,7 +56,8 @@ export async function saveScheduleToSupabase(data: WeeklySchedule): Promise<bool
                             day: day,
                             time: item.time,
                             content: item.content,
-                            type: item.type || 'stream'
+                            type: item.type || 'stream',
+                            video_url: item.videoUrl
                         });
                     }
                 });
@@ -180,7 +181,8 @@ export async function getScheduleFromSupabase(targetWeekRange?: string): Promise
                     scheduleObj[item.day] = {
                         time: item.time || '',
                         content: item.content || '',
-                        type: item.type as any || 'stream'
+                        type: item.type as any || 'stream',
+                        videoUrl: item.video_url || undefined
                     };
                 }
             });

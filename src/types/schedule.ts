@@ -2,6 +2,7 @@ export interface ScheduleItem {
     time: string;
     content: string;
     type?: 'stream' | 'collab' | 'collab_maivi' | 'collab_hanavi' | 'collab_universe' | 'off';
+    videoUrl?: string;
 }
 
 export interface DaySchedule {
