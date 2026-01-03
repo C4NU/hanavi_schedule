@@ -135,53 +135,48 @@ export default function Home() {
         onExport={handleExport}
         onPrevWeek={handlePrevWeek}
         onNextWeek={handleNextWeek}
-        headerControls={
-          <div
-            // @ts-ignore - Custom prop passing for dateDisplay
-            dateDisplay={
-              <div className="relative">
-                <button
-                  onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
-                  className="text-lg md:text-xl font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 px-4 py-1 rounded-full transition-colors flex items-center gap-2 select-none"
-                >
-                  {weekRangeString}
-                  <span className="text-xs text-gray-500">▼</span>
-                </button>
+        dateSelector={
+          <div className="relative">
+            <button
+              onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
+              className="text-lg md:text-xl font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 px-4 py-1 rounded-full transition-colors flex items-center gap-2 select-none"
+            >
+              {weekRangeString}
+              <span className="text-xs text-gray-500">▼</span>
+            </button>
 
-                {/* Date Dropdown */}
-                {isDateDropdownOpen && (
-                  <>
-                    <div className="fixed inset-0 z-[150]" onClick={() => setIsDateDropdownOpen(false)} />
-                    <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-[151] max-h-60 overflow-y-auto py-1">
-                      {Array.from({ length: 9 }).map((_, i) => {
-                        const offset = i - 4; // -4 to +4 weeks
-                        const d = new Date(currentDate);
-                        d.setDate(d.getDate() + (offset * 7));
-                        const rangeStr = getWeekRangeString(d);
-                        const isCurrent = offset === 0;
+            {/* Date Dropdown */}
+            {isDateDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-[150]" onClick={() => setIsDateDropdownOpen(false)} />
+                <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-[151] max-h-60 overflow-y-auto py-1">
+                  {Array.from({ length: 9 }).map((_, i) => {
+                    const offset = i - 4; // -4 to +4 weeks
+                    const d = new Date(currentDate);
+                    d.setDate(d.getDate() + (offset * 7));
+                    const rangeStr = getWeekRangeString(d);
+                    const isCurrent = offset === 0;
 
-                        return (
-                          <button
-                            key={i}
-                            onClick={() => {
-                              setCurrentDate(d);
-                              setIsDateDropdownOpen(false);
-                            }}
-                            className={`w-full text-left px-4 py-2 text-sm font-medium hover:bg-pink-50 transition-colors flex justify-between items-center
-                              ${isCurrent ? 'bg-pink-100 text-pink-600' : 'text-gray-700'}
-                            `}
-                          >
-                            <span>{rangeStr}</span>
-                            {isCurrent && <span>✓</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-              </div>
-            }
-          />
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setCurrentDate(d);
+                          setIsDateDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm font-medium hover:bg-pink-50 transition-colors flex justify-between items-center
+                          ${isCurrent ? 'bg-pink-100 text-pink-600' : 'text-gray-700'}
+                        `}
+                      >
+                        <span>{rangeStr}</span>
+                        {isCurrent && <span>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
         }
       />
     </main>

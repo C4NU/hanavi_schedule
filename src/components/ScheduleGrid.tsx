@@ -17,11 +17,12 @@ interface Props {
     onCellUpdate?: (charId: string, day: string, field: keyof ScheduleItem, value: string) => void;
     onCellBlur?: (charId: string, day: string, field: keyof ScheduleItem, value: string) => void;
     headerControls?: React.ReactNode;
+    dateSelector?: React.ReactNode;
 }
 
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
-const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrevWeek, onNextWeek, isEditable, onCellUpdate, onCellBlur, headerControls }, ref) => {
+const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrevWeek, onNextWeek, isEditable, onCellUpdate, onCellBlur, headerControls, dateSelector }, ref) => {
     const [selectedCharacters, setSelectedCharacters] = useState<Set<string>>(
         new Set(data.characters.map(c => c.id))
     );
@@ -141,8 +142,8 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrev
                                         </svg>
                                     </button>
                                 )}
-                                {headerControls && React.isValidElement(headerControls) && (headerControls as any).props.dateDisplay ? (
-                                    (headerControls as any).props.dateDisplay
+                                {dateSelector ? (
+                                    dateSelector
                                 ) : (
                                     <span className={styles.date} style={{ margin: 0 }}>{data.weekRange}</span>
                                 )}
