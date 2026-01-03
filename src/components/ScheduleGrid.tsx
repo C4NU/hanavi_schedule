@@ -141,7 +141,11 @@ const ScheduleGrid = forwardRef<HTMLDivElement, Props>(({ data, onExport, onPrev
                                         </svg>
                                     </button>
                                 )}
-                                <span className={styles.date} style={{ margin: 0 }}>{data.weekRange}</span>
+                                {headerControls && React.isValidElement(headerControls) && (headerControls as any).props.dateDisplay ? (
+                                    (headerControls as any).props.dateDisplay
+                                ) : (
+                                    <span className={styles.date} style={{ margin: 0 }}>{data.weekRange}</span>
+                                )}
                                 {onNextWeek && (
                                     <button
                                         onClick={onNextWeek}
